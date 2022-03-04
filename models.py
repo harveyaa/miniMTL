@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class ukbbSex(nn.Module):
     def __init__(self):
         super().__init__()
@@ -23,7 +22,9 @@ class ukbbSex(nn.Module):
         x = self.conv(torch.unsqueeze(x,dim=1))
         x = self.batch0(x)
         x = x.view(x.size()[0],-1)
-        x = self.dropout(F.relu(self.batch1(self.fc1(x))))
-        x = self.dropout(F.relu(self.batch2(self.fc2(x))))
+        x = self.dropout(F.relu(self.fc1(x)))
+        x = self.batch1(x)
+        x = self.dropout(F.relu(self.fc2(x)))
+        x = self.batch2(x)
         x = self.softmax(self.fc3(x))
         return x
