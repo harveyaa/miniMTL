@@ -5,7 +5,11 @@ from datasets import *
 from models import *
 from util import train,test
 
-""" March 4 2022 - Working single task usage."""
+"""
+March 4 2022
+------------
+Working single task usage.
+"""
 
 p_pheno = '/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/pheno_01-12-21.csv'
 p_conn = '/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/connectomes_01-12-21.csv'
