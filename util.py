@@ -2,6 +2,7 @@
 import torch
 import numpy as np
 
+"""
 # From torch fundamentals course
 def train(dataloader, model, loss_fn, optimizer,device='cpu'):
     size = len(dataloader.dataset)
@@ -61,9 +62,11 @@ def trainMTL(dataloaders, model, loss_fns, optimizer,device='cpu'):
                 X,y = next(iter(dataloader))
 
                 train_step(X,y,model,loss_fns[task],optimizer,task,device=device)
+"""
 
 # From torch fundamentals course
 def testMTL(dataloaders, model,loss_fns,device='cpu'):
+    """ Adapted for current HPSModel & dataset formats but DRAFT functionality."""
     tasks = list(dataloaders.keys())
 
     model.eval()
@@ -75,9 +78,10 @@ def testMTL(dataloaders, model,loss_fns,device='cpu'):
 
         test_loss, correct = 0, 0
         with torch.no_grad():
-            for X, y in dataloader:
+            for X, y_dict in dataloader:
+                y = y_dict[task]
                 X, y = X.to(device), y.to(device)
-                pred = model(X,task)
+                pred = model(X,[task])[task]
                 test_loss += loss_fn(pred, y).item()
                 correct += (pred.argmax(1) == y).type(torch.float).sum().item()
         test_loss /= size
