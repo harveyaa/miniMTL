@@ -7,8 +7,9 @@ from util import train,test
 
 """
 March 4 2022
-------------
-Working single task usage.
+    Working single task usage.
+March 9 2022
+    BROKEN - update for new formats
 """
 
 p_pheno = '/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/pheno_01-12-21.csv'

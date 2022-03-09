@@ -6,10 +6,12 @@ from models import *
 from util import train,test
 
 """ 
-March 4 2022
 HPS v0
 ------
-Functional as in produces no errors but logically potentially unsound.
+March 4 2022
+    Functional as in produces no errors but logically potentially unsound.
+March 9 2022
+    BROKEN - update for new formats
 """
 
 p_pheno = '/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/pheno_01-12-21.csv'
