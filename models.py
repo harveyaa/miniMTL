@@ -80,12 +80,46 @@ class head(nn.Module):
 
 class HPSModel(nn.Module):
     """ Multi-input HPS."""
-    def __init__(self,encoder,decoders):
+    def __init__(self,encoder,decoders,loss_fns):
+        """
+        Parameters
+        ----------
+        encoder: nn.Module
+        decoders: dict str: nn.Module
+        loss_fns: dict str: loss fn
+        """
         super().__init__()
         self.encoder = encoder
         self.decoders = decoders
+        self.loss_fns = loss_fns
     
-    def forward(self,x,task):
-        x = self.encoder(x)
-        x = self.decoders[task](x)
-        return x
+    def forward(self,X,task_names):
+        """
+        Parameters
+        ----------
+        X: minibatch
+        task_names: list of tasks x goes to
+
+        Returns
+        -------
+        dict: task_name: output
+        """
+        X = self.encoder(X)
+        outputs = {}
+        for task in task_names:
+            outputs[task] = self.decoders[task](X)
+        return outputs
+    
+    def calculate_loss(self,X,Y_dict):
+        """
+        Parameters
+        ----------
+        X: batch
+        Y_dict: dict: str labels
+        """
+        task_names = Y_dict.keys()
+        outputs = self.forward(X,task_names)
+        losses = {}
+        for task in task_names:
+            losses[task] = self.loss_fns[task](outputs[task],Y_dict[task])
+        return losses
