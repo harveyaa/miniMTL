@@ -35,7 +35,6 @@ class encoder(nn.Module):
         # in_channels, out_channels
         self.conv = nn.Conv2d(1, 256, (40,1))
         self.batch0 = nn.BatchNorm2d(256)
-
         self.fc1 = nn.Linear(256*52, 64)
         self.batch1 = nn.BatchNorm1d(64)
         self.fc2 = nn.Linear(64, 64)
@@ -56,10 +55,6 @@ class encoder(nn.Module):
 class head(nn.Module):
     def __init__(self):
         super().__init__()
-        #self.fc1 = nn.Linear(256*52, 64)
-        #self.batch1 = nn.BatchNorm1d(64)
-        #self.fc2 = nn.Linear(64, 64)
-        #self.batch2 = nn.BatchNorm1d(64)
         self.fc3 = nn.Linear(64,64)
         self.batch3 = nn.BatchNorm1d(64)
         self.fc4 = nn.Linear(64,2)
@@ -68,11 +63,6 @@ class head(nn.Module):
         self.softmax = nn.Softmax(dim=1)
     
     def forward(self,x):
-        #x = x.view(x.size()[0],-1)
-        #x = self.dropout(F.relu(self.fc1(x)))
-        #x = self.batch1(x)
-        #x = self.dropout(F.relu(self.fc2(x)))
-        #x = self.batch2(x)
         x = self.dropout(F.relu(self.fc3(x)))
         x = self.batch3(x)
         x = self.softmax(self.fc4(x))
@@ -85,8 +75,11 @@ class HPSModel(nn.Module):
         Parameters
         ----------
         encoder: nn.Module
-        decoders: dict str: nn.Module
-        loss_fns: dict str: loss fn
+            Shared portion of the model.
+        decoders: dict[str, nn.Module]
+            Dictionary from task name to task-specific decoder (head).
+        loss_fns: dict[str, loss_fn]
+            Dictionary from task name to torch loss function.
         """
         super().__init__()
         self.encoder = encoder
@@ -97,12 +90,15 @@ class HPSModel(nn.Module):
         """
         Parameters
         ----------
-        X: minibatch
-        task_names: list of tasks x goes to
+        X: Tensor
+            A batch of data.
+        task_names: list[str]
+            List of task names associated with X.
 
         Returns
         -------
-        dict: task_name: output
+        dict[str, Tensor]
+            Dictionary from task name to associated output.
         """
         X = self.encoder(X)
         outputs = {}
@@ -114,8 +110,15 @@ class HPSModel(nn.Module):
         """
         Parameters
         ----------
-        X: batch
-        Y_dict: dict: str labels
+        X: Tensor
+            A batch of data.
+        Y_dict: dict[str, Tensor]
+            Dictionary from task name to associated labels.
+        
+        Returns
+        -------
+        dict[str, Tensor]
+            Dictionary from task name to associated loss.
         """
         task_names = Y_dict.keys()
         outputs = self.forward(X,task_names)
@@ -123,3 +126,40 @@ class HPSModel(nn.Module):
         for task in task_names:
             losses[task] = self.loss_fns[task](outputs[task],Y_dict[task])
         return losses
+    
+    def score(self,dataloaders):
+        """ 
+        Score model on given data.
+
+        Parameters
+        ----------
+        dataloaders: dict[str, DataLoader]
+            Dictionary from task name to associated DataLoader.
+        
+        Returns
+        -------
+        dict[str, dict[str, float]]
+            Dictionary from task name to dictionary of metric label
+            ('accuracy', 'test_loss') to value.
+        """
+        tasks = list(dataloaders.keys())
+        self.eval()
+        
+        metrics = {}
+        for task in tasks:
+            dataloader = dataloaders[task]
+            loss_fn = self.loss_fns[task]
+            size = len(dataloader.dataset)
+
+            test_loss, correct = 0, 0
+            with torch.no_grad():
+                for X, Y_dict in dataloader:
+                    Y = Y_dict[task]
+                    pred = self.forward(X,[task])[task]
+                    test_loss += loss_fn(pred, Y).item()
+                    correct += (pred.argmax(1) == Y).type(torch.float).sum().item()
+            test_loss /= size
+            correct /= size
+            
+            metrics[task] = {'accuracy':100*correct,'test_loss':test_loss}
+        return metrics
