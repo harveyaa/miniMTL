@@ -18,7 +18,7 @@ March 11 2022
 """
 # Define paths to data
 p_pheno = '/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/pheno_01-12-21.csv'
-p_conn = '/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/connectomes_01-12-21.csv'
+p_conn = '/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/connectomes/'
 
 # Create Datasets
 case1 = 'SZ'

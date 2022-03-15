@@ -14,10 +14,10 @@ def split_data(dataset,test_size=0.2,seed=0):
     return Subset(dataset,train_idx), Subset(dataset,test_idx)
 
 # From torch fundamentals course
-def train(dataloader, model, loss_fn, optimizer,device='cpu'):
+def train(dataloader, model, loss_fn, name, optimizer,device='cpu'):
     size = len(dataloader.dataset)
     for batch, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
+        X, y = X.to(device), y[name].to(device)
         
         # Compute prediction error
         pred = model(X)
@@ -33,13 +33,13 @@ def train(dataloader, model, loss_fn, optimizer,device='cpu'):
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 # From torch fundamentals course
-def test(dataloader, model,loss_fn,device='cpu'):
+def test(dataloader, model,loss_fn,name,device='cpu'):
     size = len(dataloader.dataset)
     model.eval()
     test_loss, correct = 0, 0
     with torch.no_grad():
         for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
+            X, y = X.to(device), y[name].to(device)
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
