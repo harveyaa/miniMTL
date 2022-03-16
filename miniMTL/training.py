@@ -3,7 +3,7 @@ import random
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
-def get_batches(dataloaders, shuffle=True):
+def get_batches(dataloaders, shuffle=True,seed=0):
     """
     Combine batches across DataLoaders for Multi-Task training, in either shuffled or sequential order.
 
@@ -16,9 +16,8 @@ def get_batches(dataloaders, shuffle=True):
     
     Yields
     ------
-    (batch, DataLoader)
-        batch is a tuple of (X, Y_dict) and DataLoader is the DataLoader
-        that that batch came from - only provides metadata & is not accessed by the model.
+    batch
+        batch is a tuple of (X, Y_dict)
     """
     tasks = list(dataloaders.keys())
     idx_to_task = dict(zip(range(len(tasks)),tasks))
@@ -31,10 +30,11 @@ def get_batches(dataloaders, shuffle=True):
         dl_indices.extend([idx]*count)
     
     if shuffle:
+        random.seed(seed)
         random.shuffle(dl_indices)
     
     for idx in dl_indices:
-        yield next(dl_iters[idx]), dataloaders[idx_to_task[idx]]
+        yield next(dl_iters[idx])
 
 
 class Trainer:
@@ -53,7 +53,7 @@ class Trainer:
         self.n_epochs = n_epochs
         self.writer = SummaryWriter(log_dir=log_dir)
 
-    def fit(self,model,dataloaders,test_dataloaders):
+    def fit(self,model,dataloaders,test_dataloaders, shuffle=True):
         """
         Trains the passed model according to the hyperparameters passed to the Trainer.
 
@@ -72,10 +72,10 @@ class Trainer:
         model.train()
 
         for epoch_num in range(self.n_epochs):
-            batches = tqdm(enumerate(get_batches(dataloaders)),
+            batches = tqdm(enumerate(get_batches(dataloaders,shuffle=shuffle)),
                             total=n_batches_per_epoch,
                             desc=f"Epoch {epoch_num}")
-            for batch_num, (batch, dataloader) in batches:
+            for batch_num, batch in batches:
                 X, Y_dict = batch
                 batch_size = len(next(iter(Y_dict.values())))
 
