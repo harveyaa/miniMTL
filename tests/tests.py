@@ -97,6 +97,12 @@ class TestModel:
         model, trainloader, testloader = gen_model_and_loaders(data,shuffle=False)
         m = model.score(testloader)
         assert isinstance(m,dict)
+    
+    def test_device(self,tmpdir):
+        data = gen_case_con_dataset(tmpdir,n_cases=100)
+        model, trainloader, testloader = gen_model_and_loaders(data,shuffle=False)
+        print(next(model.parameters()).is_cuda)
+        assert False
 
 class TestTraining:
     def test_get_batches_shuffled(self,tmpdir):
