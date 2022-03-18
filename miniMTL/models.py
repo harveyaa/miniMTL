@@ -90,10 +90,14 @@ class HPSModel(nn.Module):
         self.decoders = decoders
         self.loss_fns = loss_fns
 
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.encoder.to(torch.device(self.device))
+        # Register all the modules to make sure the parameters are tracked properly
+        # If don't do this explicitly model.parameters() are only for encoder
+        self.add_module('encoder',encoder)
         for key in list(self.decoders.keys()):
-            decoders[key].to(torch.device(self.device))
+            self.add_module(key,decoders[key])
+
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.to(device)
         print(f'Initialized HPSModel using: {self.device}.')
     
     def forward(self,X,task_names):

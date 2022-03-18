@@ -32,6 +32,8 @@ def gen_pheno(dir,n_cases=10,n_tasks=2,seed=0):
 
 def gen_case_con_dataset(dir,n_cases=10,n_tasks=2,seed=0):
     """
+    Generate a caseControlDataset.
+
     Returns
     -------
     dict[str:caseControlDataset]
@@ -47,6 +49,25 @@ def gen_case_con_dataset(dir,n_cases=10,n_tasks=2,seed=0):
     return data
 
 def gen_model_and_loaders(dataset,batch_size=16,shuffle=True):
+    """
+    Generate a model and dataloaders.
+
+    Parameters
+    ----------
+    batch_size: int, default=16
+        batch_size for DataLoaders
+    shuffle: bool
+        Wether or not to shuffle DataLoaders.
+
+    Returns
+    -------
+    HPSModel
+        Model built from dataset using default encoder & head modules.
+    DataLoader
+        Training dataloader.
+    DataLoader
+        Test dataloader.
+    """
     trainloaders = {}
     testloaders = {}
     loss_fns = {}
@@ -83,6 +104,18 @@ class TestData:
         assert isinstance(Y_dict,dict)
 
 class TestModel:
+    def test_init(self,tmpdir):
+        """ Test designed to make sure 'model' tracks the encoder and all the decoders."""
+        n_tasks = 5
+        data = gen_case_con_dataset(tmpdir,n_cases=100,n_tasks=n_tasks)
+        model, _,_ = gen_model_and_loaders(data,shuffle=False)
+
+        # Check that all the task heads are in the model
+        names = []
+        for name, param in model.named_parameters():
+            names.append(name.split('.')[0])
+        assert len(np.unique(names)) == n_tasks + 1
+        
     def test_forward(self,tmpdir):
         data = gen_case_con_dataset(tmpdir,n_cases=100)
         model, trainloaders, testloaders = gen_model_and_loaders(data,shuffle=False)
@@ -101,8 +134,7 @@ class TestModel:
     def test_device(self,tmpdir):
         data = gen_case_con_dataset(tmpdir,n_cases=100)
         model, trainloader, testloader = gen_model_and_loaders(data,shuffle=False)
-        print(next(model.parameters()).is_cuda)
-        assert False
+        assert torch.cuda.is_available() == (next(model.parameters()).is_cuda)
 
 class TestTraining:
     def test_get_batches_shuffled(self,tmpdir):
