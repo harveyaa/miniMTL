@@ -74,7 +74,7 @@ class head(nn.Module):
 
 class HPSModel(nn.Module):
     """ Multi-input HPS."""
-    def __init__(self,encoder,decoders,loss_fns, device='cpu'):
+    def __init__(self,encoder,decoders,loss_fns):
         """
         Parameters
         ----------
@@ -97,7 +97,7 @@ class HPSModel(nn.Module):
             self.add_module(key,decoders[key])
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.to(device)
+        self.to(self.device)
         print(f'Initialized HPSModel using: {self.device}.')
     
     def forward(self,X,task_names):
