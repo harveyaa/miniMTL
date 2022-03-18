@@ -89,7 +89,7 @@ class TestModel:
         trainloader = trainloaders[list(trainloaders.keys())[0]]
         X, Y_dict = next(iter(trainloader))
         task = list(Y_dict.keys())[0]
-        pred = model.forward(X,[task])[task]
+        pred = model.forward(X.to(model.device),[task])[task]
         assert isinstance(pred,torch.Tensor)
 
     def test_score(self,tmpdir):
