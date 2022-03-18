@@ -29,7 +29,9 @@ def get_batches(dataloaders, shuffle=True,seed=0):
         dl_indices.extend([idx]*count)
     
     if shuffle:
-        random.seed(seed)
+        # TODO: seed or not?
+        # Do we want same batch order across eopchs? (guess no)
+        #random.seed(seed)
         random.shuffle(dl_indices)
     
     for idx in dl_indices:

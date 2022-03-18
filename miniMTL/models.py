@@ -115,11 +115,10 @@ class HPSModel(nn.Module):
             Dictionary from task name to associated output.
         """
         X = self.encoder(X)
-        print('made it ENCODER')
+
         outputs = {}
         for task in task_names:
             outputs[task] = self.decoders[task](X)
-            print('made it TASK HEAD')
         return outputs
     
     def calculate_loss(self,X,Y_dict):
