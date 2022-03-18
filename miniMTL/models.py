@@ -92,8 +92,8 @@ class HPSModel(nn.Module):
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.encoder.to(torch.device(self.device))
-        for decoder in self.decoders:
-            decoder.to(torch.device(self.device))
+        for key in list(self.decoders.keys()):
+            decoders[key].to(torch.device(self.device))
         print(f'Initialized HPSModel using: {self.device}.')
     
     def forward(self,X,task_names):
