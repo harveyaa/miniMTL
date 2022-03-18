@@ -1,10 +1,14 @@
 import os
 import numpy as np
 import pandas as pd
+
+import torch.nn as nn
+from torch.utils.data import DataLoader
+
 from miniMTL.datasets import *
 from miniMTL.util import *
+from miniMTL.models import *
 from miniMTL.training import *
-from torch.utils.data import DataLoader
 
 def gen_connectomes(dir,n_cases=10,seed=0):
     """Put fake connectomes in a tmpdir to test dataset creation."""
@@ -26,7 +30,7 @@ def gen_pheno(dir,n_cases=10,n_tasks=2,seed=0):
     pheno['PI'] = 'study0'
     pheno.to_csv(os.path.join(dir,'pheno.csv'))
 
-def gen_dataset(dir,n_cases=10,n_tasks=2,seed=0):
+def gen_case_con_dataset(dir,n_cases=10,n_tasks=2,seed=0):
     """
     Returns
     -------
@@ -42,6 +46,25 @@ def gen_dataset(dir,n_cases=10,n_tasks=2,seed=0):
         data[f'task{i}'] = caseControlDataset(f'task{i}',p_pheno,dir)
     return data
 
+def gen_model_and_loaders(dataset,batch_size=16,shuffle=True):
+    trainloaders = {}
+    testloaders = {}
+    loss_fns = {}
+    decoders = {}
+    for k in dataset.keys():
+        train_d, test_d = split_data(dataset[k])
+
+        trainloaders[k] = DataLoader(train_d, batch_size=batch_size, shuffle=shuffle)
+        testloaders[k] = DataLoader(test_d, batch_size=batch_size, shuffle=shuffle)
+
+        loss_fns[k] = nn.CrossEntropyLoss()
+        decoders[k] = head().double()
+    
+    model = HPSModel(encoder().double(),
+                    decoders,
+                    loss_fns)
+    
+    return model, trainloaders, testloaders
 
 class TestData:
     def test_case_control_dataset(self,tmpdir):
@@ -50,10 +73,34 @@ class TestData:
         p_pheno = os.path.join(tmpdir,'pheno.csv')
         data = caseControlDataset('task1',p_pheno,tmpdir)
         assert data.name == 'task1'
+    
+    def test_dataloader(self,tmpdir):
+        data = gen_case_con_dataset(tmpdir,n_cases=100)
+        _, trainloaders, testloaders = gen_model_and_loaders(data,shuffle=False)
+        trainloader = trainloaders[list(trainloaders.keys())[0]]
+        X, Y_dict = next(iter(trainloader))
+        assert isinstance(X,torch.Tensor)
+        assert isinstance(Y_dict,dict)
+
+class TestModel:
+    def test_forward(self,tmpdir):
+        data = gen_case_con_dataset(tmpdir,n_cases=100)
+        model, trainloaders, testloaders = gen_model_and_loaders(data,shuffle=False)
+        trainloader = trainloaders[list(trainloaders.keys())[0]]
+        X, Y_dict = next(iter(trainloader))
+        task = list(Y_dict.keys())[0]
+        pred = model.forward(X,[task])[task]
+        assert isinstance(pred,torch.Tensor)
+
+    def test_score(self,tmpdir):
+        data = gen_case_con_dataset(tmpdir,n_cases=100)
+        model, trainloader, testloader = gen_model_and_loaders(data,shuffle=False)
+        m = model.score(testloader)
+        assert isinstance(m,dict)
 
 class TestTraining:
     def test_get_batches_shuffled(self,tmpdir):
-        data = gen_dataset(tmpdir,n_cases=20)
+        data = gen_case_con_dataset(tmpdir,n_cases=20)
         
         trainloaders = {}
         for k in data.keys():
@@ -67,7 +114,7 @@ class TestTraining:
         assert tasks == ['task1', 'task0', 'task0', 'task1']
 
     def test_get_batches_sequential(self,tmpdir):
-        data = gen_dataset(tmpdir,n_cases=20)
+        data = gen_case_con_dataset(tmpdir,n_cases=20)
         
         trainloaders = {}
         for k in data.keys():

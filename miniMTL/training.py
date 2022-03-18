@@ -20,7 +20,6 @@ def get_batches(dataloaders, shuffle=True,seed=0):
         batch is a tuple of (X, Y_dict)
     """
     tasks = list(dataloaders.keys())
-    idx_to_task = dict(zip(range(len(tasks)),tasks))
     batch_counts = [len(dataloaders[t]) for t in tasks]
 
     dl_iters = [iter(dataloaders[t]) for t in tasks]
