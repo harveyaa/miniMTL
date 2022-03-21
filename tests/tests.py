@@ -28,6 +28,7 @@ def gen_pheno(dir,n_cases=10,n_tasks=2,seed=0):
     df_con = pd.DataFrame(np.ones((n_cases,1)),index=range(n_cases,2*n_cases),columns=['non_carriers'])
     pheno = pd.concat([df_case,df_con]).fillna(0)
     pheno['PI'] = 'study0'
+    pheno['SITE'] = 'site0'
     pheno.to_csv(os.path.join(dir,'pheno.csv'))
 
 def gen_case_con_dataset(dir,n_cases=10,n_tasks=2,seed=0):
@@ -149,7 +150,8 @@ class TestTraining:
         for X,Y_dict in get_batches(trainloaders,shuffle=True):
             tasks.append(list(Y_dict.keys())[0])
         
-        assert tasks == ['task1', 'task0', 'task0', 'task1']
+        print(tasks)
+        assert tasks == ['task0', 'task1', 'task1', 'task0']
 
     def test_get_batches_sequential(self,tmpdir):
         data = gen_case_con_dataset(tmpdir,n_cases=20)
