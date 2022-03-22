@@ -9,6 +9,7 @@ from miniMTL.datasets import *
 from miniMTL.util import *
 from miniMTL.models import *
 from miniMTL.training import *
+from miniMTL.logging import *
 
 def gen_connectomes(dir,n_cases=10,seed=0):
     """Put fake connectomes in a tmpdir to test dataset creation."""
@@ -136,6 +137,21 @@ class TestModel:
         data = gen_case_con_dataset(tmpdir,n_cases=100)
         model, trainloader, testloader = gen_model_and_loaders(data,shuffle=False)
         assert torch.cuda.is_available() == (next(model.parameters()).is_cuda)
+
+class TestLogging:
+    def test_logging(self,tmpdir):
+        logger = Logger(log_dir=tmpdir)
+
+        for i in range(10):
+            logger.add_scalar('task1','accuracy',np.random.randn(),i)
+            logger.add_scalar('task1','loss',np.random.randn(),i)
+            logger.add_scalar('task2','loss',np.random.randn(),i)
+        
+        assert logger.log_dir == tmpdir
+        logger.save()
+
+        df = pd.read_csv(os.path.join(tmpdir,logger.filename),header=[0,1],index_col=0)
+        assert df.columns.to_list() == [('task1', 'accuracy'), ('task1', 'loss'), ('task2', 'loss')]
 
 class TestTraining:
     def test_get_batches_shuffled(self,tmpdir):
