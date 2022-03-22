@@ -1,7 +1,8 @@
-import numpy as np
 import random
+import numpy as np
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
+from miniMTL.logging import Logger
 
 def get_batches(dataloaders, shuffle=True,seed=0):
     """
@@ -39,7 +40,7 @@ def get_batches(dataloaders, shuffle=True,seed=0):
 
 
 class Trainer:
-    def __init__(self,optimizer,n_epochs,log_dir='./runs/'):
+    def __init__(self,optimizer,n_epochs,log_dir=None):
         """
         Parameters
         ----------
@@ -47,12 +48,13 @@ class Trainer:
             torch Optimizer object.
         n_epochs: int
             Number of epochs to train for.
-        log_dir: str, default='./runs/'
+        log_dir: str, default=None
             Path to log directory.
         """
         self.optimizer = optimizer
         self.n_epochs = n_epochs
         self.writer = SummaryWriter(log_dir=log_dir)
+        self.logger = Logger(log_dir=log_dir)
 
     def fit(self,model,dataloaders,test_dataloaders, shuffle=True):
         """
@@ -90,6 +92,7 @@ class Trainer:
                 for task in tasks:
                     if task in loss_dict.keys():
                         self.writer.add_scalar(f"Loss/train/{task}",loss_dict[task],epoch_num)
+                        self.logger.add_scalar(task,"Loss/train",loss_dict[task],epoch_num)
 
                 # Calculate the average loss
                 if len(loss_dict.values()) == 1:
@@ -108,6 +111,9 @@ class Trainer:
                 for task in tasks:
                     self.writer.add_scalar(f"Loss/test/{task}",metrics[task]['test_loss'],epoch_num)
                     self.writer.add_scalar(f"Accuracy/test/{task}",metrics[task]['accuracy'],epoch_num)
+                    self.logger.add_scalar(task, "Loss/test",metrics[task]['test_loss'],epoch_num)
+                    self.logger.add_scalar(task, "Accuracy/test",metrics[task]['accuracy'],epoch_num)
 
         self.writer.flush()
         self.writer.close()
+        self.logger.save()
