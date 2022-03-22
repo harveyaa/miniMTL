@@ -122,7 +122,7 @@ class ukbbSexDataset(Dataset):
         conn_path = os.path.join(conn_path,'connectome_{}_cambridge64.npy')
         pheno = pd.read_csv(pheno_path,index_col=0)
 
-        idx = pheno[pheno['PI']=='UKBB'].index
+        idx = pheno[(pheno['PI']=='UKBB') & (pheno['non_carriers']==1)].index
         mask = np.tri(64,dtype=bool)
 
         self.X = np.array([np.load(conn_path.format(sub_id))[mask] for sub_id in idx])
