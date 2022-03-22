@@ -40,19 +40,19 @@ def get_batches(dataloaders, shuffle=True,seed=0):
 
 
 class Trainer:
-    def __init__(self,optimizer,n_epochs,log_dir=None):
+    def __init__(self,optimizer,num_epochs=100,log_dir=None):
         """
         Parameters
         ----------
         optimizer: Optimizer
             torch Optimizer object.
-        n_epochs: int
+        num_epochs: int
             Number of epochs to train for.
         log_dir: str, default=None
             Path to log directory.
         """
         self.optimizer = optimizer
-        self.n_epochs = n_epochs
+        self.num_epochs = num_epochs
         self.writer = SummaryWriter(log_dir=log_dir)
         self.logger = Logger(log_dir=log_dir)
 
@@ -74,7 +74,7 @@ class Trainer:
         # Set to training mode
         model.train()
 
-        for epoch_num in range(self.n_epochs):
+        for epoch_num in range(self.num_epochs):
             batches = tqdm(enumerate(get_batches(dataloaders,shuffle=shuffle)),
                             total=n_batches_per_epoch,
                             desc=f"Epoch {epoch_num}")
@@ -92,7 +92,7 @@ class Trainer:
                 for task in tasks:
                     if task in loss_dict.keys():
                         self.writer.add_scalar(f"Loss/train/{task}",loss_dict[task],epoch_num)
-                        self.logger.add_scalar(task,"Loss/train",loss_dict[task],epoch_num)
+                        self.logger.add_scalar(task,"Loss/train",loss_dict[task].item(),epoch_num)
 
                 # Calculate the average loss
                 if len(loss_dict.values()) == 1:

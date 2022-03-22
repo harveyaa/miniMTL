@@ -11,15 +11,16 @@ class Logger:
         Log directory, if None passed creates a dir 'logs' in current location.
     tasks: dict[str:dict[str:dict[int:float]]]
         Dictionary from task to dictionary of metric labels, to epoch:value.
+    filename: str
     """
     def __init__(self,log_dir=None):
         self.log_dir = log_dir if not log_dir is None else ''
+
         if not os.path.isdir(self.log_dir):
             default_dir = os.path.join(os.getcwd(),'logs')
-            if os.path.isdir(default_dir):
-                self.log_dir = default_dir
-            else:
-                self.log_dir = os.mkdir(default_dir)
+            if not os.path.isdir(default_dir):
+                os.mkdir(default_dir)
+            self.log_dir = default_dir
 
         self.tasks = {}
 
@@ -36,5 +37,5 @@ class Logger:
             dfs.append(pd.DataFrame(self.tasks[task]))
         df = pd.concat(dfs,keys = list(self.tasks.keys()),axis=1)
         
-        filename = datetime.now().strftime("%Y-%m-%d_%H:%M:%S_") + '_'.join(list(self.tasks.keys())) + '.csv'
-        df.to_csv(os.path.join(self.log_dir,filename))
+        self.filename = datetime.now().strftime("%Y-%m-%d_%H:%M:%S_") + '_'.join(list(self.tasks.keys())) + '.csv'
+        df.to_csv(os.path.join(self.log_dir,self.filename))
