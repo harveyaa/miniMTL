@@ -6,14 +6,16 @@ from miniMTL.datasets import caseControlDataset
 from miniMTL.models import *
 from miniMTL.training import Trainer
 from miniMTL.util import split_data
+from miniMTL.hps import HPSModel
 
 from argparse import ArgumentParser
 
 """ 
-n_task
+model_00
 ------
-March 22 2022
-    Script to run HPS model on n_tasks (destined for architecture search).
+March 23 2022
+    - encoder0
+    - head0
 """
 
 if __name__ == "__main__":
@@ -58,10 +60,10 @@ if __name__ == "__main__":
         trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
         testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
         loss_fns[case] = nn.CrossEntropyLoss()
-        decoders[case] = head().double()
+        decoders[case] = head0().double()
     
     # Create model
-    model = HPSModel(encoder().double(),
+    model = HPSModel(encoder0().double(),
                 decoders,
                 loss_fns)
     
@@ -79,3 +81,4 @@ if __name__ == "__main__":
         print(key)
         print('Accuracy: ', metrics[key]['accuracy'])
         print('Test loss: ', metrics[key]['test_loss'])
+    print()
