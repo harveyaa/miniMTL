@@ -3,11 +3,11 @@
 Minimal Mutli-Task Learning for neuroimaging data.
 
 ```
-├── LICENSE
+├── README.md
 │
 ├── setup.py
 │
-├── README.md
+├── LICENSE
 │
 ├── requirements.txt            <- generated with `pip freeze > requirements.txt`
 │
@@ -43,3 +43,20 @@ Minimal Mutli-Task Learning for neuroimaging data.
 │
 └── workbook.ipynb              <- draft notebook
 ```
+
+## TODO:
+- implement:
+  - learning rate scheduling
+  - clip gradient norms
+  - other features/hyperparameters
+- use train/test/val splits
+  - need more reliable baseline values for small CNV groups
+- make better use of UKBB data
+  - sex prediction as auxiliary task
+  - other auxiliary tasks (confounds?)
+  - build imbalanced datasets for CNVs?
+    - makes metrics messier (accuracy baseline no longer 50)
+- How to evalute HPS model beyond pairwise
+  - Want a model that overall improves performance for each task vs single task
+  - groups of 3+ vs baseline?
+    - subsample from possible groupings
