@@ -37,5 +37,5 @@ class Logger:
             dfs.append(pd.DataFrame(self.tasks[task]))
         df = pd.concat(dfs,keys = list(self.tasks.keys()),axis=1)
         
-        self.filename = datetime.now().strftime("%Y-%m-%d_%H:%M:%S_") + '_'.join(list(self.tasks.keys())) + '.csv'
+        self.filename = datetime.now().strftime("%Y:%m:%d-%H:%M:%S-") + '-'.join(list(self.tasks.keys())) + '.csv'
         df.to_csv(os.path.join(self.log_dir,self.filename))
