@@ -10,6 +10,7 @@ from miniMTL.util import *
 from miniMTL.models import *
 from miniMTL.training import *
 from miniMTL.logging import *
+from miniMTL.hps import HPSModel
 
 def gen_connectomes(dir,n_cases=10,seed=0):
     """Put fake connectomes in a tmpdir to test dataset creation."""
@@ -81,9 +82,9 @@ def gen_model_and_loaders(dataset,batch_size=16,shuffle=True):
         testloaders[k] = DataLoader(test_d, batch_size=batch_size, shuffle=shuffle)
 
         loss_fns[k] = nn.CrossEntropyLoss()
-        decoders[k] = head().double()
+        decoders[k] = head0().double()
     
-    model = HPSModel(encoder().double(),
+    model = HPSModel(encoder0().double(),
                     decoders,
                     loss_fns)
     
