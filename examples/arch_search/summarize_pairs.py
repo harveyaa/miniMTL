@@ -111,6 +111,7 @@ if __name__ == "__main__":
     summary_counts.to_csv(os.path.join(path_out, filename))
 
     # Summarize vals
+    # TODO: make diagonal the baseline
     summary_vals = pd.DataFrame(vals,index=singles,columns=singles)
     print('Values\n------')
     print(summary_vals)

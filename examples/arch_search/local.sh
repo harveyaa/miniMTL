@@ -35,4 +35,4 @@ done
 #############
 # SUMMARIZE #
 #############
-python summarize_results.py --log_dir $log_dir
+python summarize_pairs.py --log_dir $log_dir
