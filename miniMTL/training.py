@@ -109,9 +109,10 @@ class Trainer:
                 # Evaluate model
                 metrics = model.score(test_dataloaders)
                 for task in tasks:
-                    self.writer.add_scalar(f"Loss/test/{task}",metrics[task]['test_loss'],epoch_num)
+                    self.writer.add_scalar(f"Loss/test/{task}",metrics[task]['loss'],epoch_num)
                     self.writer.add_scalar(f"Accuracy/test/{task}",metrics[task]['accuracy'],epoch_num)
-                    self.logger.add_scalar(task, "Loss/test",metrics[task]['test_loss'],epoch_num)
+                    
+                    self.logger.add_scalar(task, "Loss/test",metrics[task]['loss'],epoch_num)
                     self.logger.add_scalar(task, "Accuracy/test",metrics[task]['accuracy'],epoch_num)
 
         self.writer.flush()

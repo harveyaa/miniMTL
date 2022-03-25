@@ -95,7 +95,7 @@ class HPSModel(nn.Module):
             loss_fn = self.loss_fns[task]
             size = len(dataloader.dataset)
 
-            test_loss, correct = 0, 0
+            loss, correct = 0, 0
             with torch.no_grad():
                 i=0
                 for X, Y_dict in dataloader:
@@ -103,10 +103,10 @@ class HPSModel(nn.Module):
                     Y = Y_dict[task].to(self.device)
                     pred = self.forward(X,[task])[task]
 
-                    test_loss += loss_fn(pred, Y).item()
+                    loss += loss_fn(pred, Y).item()
                     correct += (pred.argmax(1) == Y).type(torch.float).sum().item()
                     i +=1
-            test_loss /= size
+            loss /= size
             correct /= size
-            metrics[task] = {'accuracy':100*correct,'test_loss':test_loss}
+            metrics[task] = {'accuracy':100*correct,'loss':loss}
         return metrics

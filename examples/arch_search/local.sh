@@ -10,8 +10,7 @@ singles='SZ ASD BIP DEL22q11_2 DUP22q11_2 DEL16p11_2 DUP16p11_2'
 
 for single in $singles
 do
-    #python $script --tasks $single --num_epochs 20 --log_dir $log_dir
-    echo $single
+    python $script --tasks $single --num_epochs 20 --log_dir $log_dir
 done
 
 ################
