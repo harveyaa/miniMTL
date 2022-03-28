@@ -1,6 +1,9 @@
 #!/bin/bash
-log_dir='/home/harveyaa/Documents/masters/MTL/miniMTL/examples/arch_search/logs'
-script='../model_00.py'
+log_dir='/home/harveyaa/Documents/masters/MTL/miniMTL/examples/arch_search/model_20/logs'
+script='/home/harveyaa/Documents/masters/MTL/miniMTL/examples/arch_search/arch_search.py'
+summarize_pairs='/home/harveyaa/Documents/masters/MTL/miniMTL/examples/arch_search/summarize_pairs.py'
+encoder=2
+head=0
 
 ################
 # SINGLE TASKS #
@@ -10,7 +13,7 @@ singles='SZ ASD BIP DEL22q11_2 DUP22q11_2 DEL16p11_2 DUP16p11_2'
 
 for single in $singles
 do
-    python $script --tasks $single --num_epochs 20 --log_dir $log_dir
+    python $script --tasks $single --num_epochs 20 --log_dir $log_dir --encoder $encoder --head $head
 done
 
 ################
@@ -27,11 +30,11 @@ for big in $bigs
 do
     for small in $smalls
     do
-        python $script --tasks $big $small --num_epochs 50 --log_dir $log_dir
+        python $script --tasks $big $small --num_epochs 50 --log_dir $log_dir --encoder $encoder --head $head
     done
 done
 
 #############
 # SUMMARIZE #
 #############
-python summarize_pairs.py --log_dir $log_dir
+python $summarize_pairs --log_dir $log_dir
