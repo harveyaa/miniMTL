@@ -106,6 +106,16 @@ class TestData:
         assert isinstance(X,torch.Tensor)
         assert isinstance(Y_dict,dict)
 
+    def test_split_data_two(self,tmpdir):
+        data = gen_case_con_dataset(tmpdir,n_cases=20)['task0']
+        train, test = split_data(data,splits=(0.8,0.2))
+        assert np.round(len(train)/(len(train) + len(test)),1) == 0.8
+
+    def test_split_data_three(self,tmpdir):
+        data = gen_case_con_dataset(tmpdir,n_cases=20)['task0']
+        train, test, val = split_data(data,splits=(0.8,0.1,0.1))
+        assert np.round(len(val)/(len(train) + len(test)+len(val)),1) == 0.1
+
 class TestModel:
     def test_init(self,tmpdir):
         """ Test designed to make sure 'model' tracks the encoder and all the decoders."""
