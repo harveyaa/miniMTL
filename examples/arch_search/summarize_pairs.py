@@ -104,8 +104,9 @@ if __name__ == "__main__":
     # SUMMARIZE COUNTS #
     ####################
     summary_counts = pd.DataFrame(counts,index=singles,columns=['n_beat','n_seen'])
+    summary_counts = summary_counts.append(summary_counts.sum().rename('Total'))
     print('Counts\n------')
-    print(summary_counts.append(summary_counts.sum().rename('Total')))
+    print(summary_counts)
     print()
 
     # Save
