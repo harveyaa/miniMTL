@@ -21,6 +21,8 @@ March 23 2022
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--tasks",help="tasks",dest='tasks',nargs='*')
+    parser.add_argument("--encoder",help="Which encoder to use.",dest='encoder',default=0,type=int)
+    parser.add_argument("--head",help="Which head to use.",dest='head',default=0,type=int)
     parser.add_argument("--data_dir",help="path to data dir",dest='data_dir',
                         default='/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/')
     parser.add_argument("--log_dir",help="path to log_dir",dest='log_dir',default=None)
@@ -30,7 +32,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     print('#############\n# HPS model #\n#############')
-    print('Tasks: ',args.tasks)
+    print('Task(s): ',args.tasks)
+    print('Encoder: ',args.encoder)
+    print('Head(s): ',args.head)
     print('Batch size: ',args.batch_size)
     print('LR: ', args.lr)
     print('Epochs: ', args.num_epochs)
@@ -55,7 +59,7 @@ if __name__ == "__main__":
     testloaders = {}
     decoders = {}
     for d, case in zip(data,cases):
-        train_d, test_d, val_d = split_data(d)
+        train_d, test_d = split_data(d)
 
         trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
         testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
