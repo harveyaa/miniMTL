@@ -43,7 +43,7 @@ if __name__ == "__main__":
         for l in logs:
             seen = l.split('.')[0].split('-')[2:]
             if (case in seen) & (len(seen)==1):
-                single_results.append(pd.read_csv(os.path.join('logs',l),header=[0,1],index_col=0))
+                single_results.append(pd.read_csv(os.path.join(args.log_dir,l),header=[0,1],index_col=0))
                 singles.append(case)
                 print(case)
     print('Done!\n')
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         for l in logs:
             seen = l.split('.')[0].split('-')[2:]
             if (case1 in seen) and (case2 in seen):
-                pair_results.append(pd.read_csv(os.path.join('logs',l),header=[0,1],index_col=0))
+                pair_results.append(pd.read_csv(os.path.join(args.log_dir,l),header=[0,1],index_col=0))
                 pairs.append((case1,case2))
                 print(f"{case1} {case2}")
     print('Done!\n')
@@ -100,7 +100,9 @@ if __name__ == "__main__":
         if case2_val > baseline.loc[case2]:
             counts[name_to_idx[case2],0] += 1
     
-    # Summarize counts
+    ####################
+    # SUMMARIZE COUNTS #
+    ####################
     summary_counts = pd.DataFrame(counts,index=singles,columns=['n_beat','n_seen'])
     print('Counts\n------')
     print(summary_counts.append(summary_counts.sum().rename('Total')))
@@ -110,8 +112,11 @@ if __name__ == "__main__":
     filename = args.prefix + '-counts.csv' if args.prefix is not None else 'counts.csv'
     summary_counts.to_csv(os.path.join(path_out, filename))
 
-    # Summarize vals
-    # TODO: make diagonal the baseline
+    ##################
+    # SUMMARIZE VALS #
+    ##################
+    # Make diagonal the baseline
+    np.fill_diagonal(vals,baseline.values)
     summary_vals = pd.DataFrame(vals,index=singles,columns=singles)
     print('Values\n------')
     print(summary_vals)
