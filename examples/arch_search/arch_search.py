@@ -10,14 +10,6 @@ from miniMTL.hps import HPSModel
 
 from argparse import ArgumentParser
 
-""" 
-model_00
-------
-March 23 2022
-    - encoder0
-    - head0
-"""
-
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--tasks",help="tasks",dest='tasks',nargs='*')
@@ -73,7 +65,7 @@ if __name__ == "__main__":
     
     # Create optimizer & trainer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    trainer = Trainer(optimizer,num_epochs=args.num_epochs)
+    trainer = Trainer(optimizer,num_epochs=args.num_epochs,log_dir=args.log_dir)
 
     # Train model
     trainer.fit(model,trainloaders,testloaders)
