@@ -98,6 +98,27 @@ class TestData:
         data = caseControlDataset('task1',p_pheno,tmpdir)
         assert data.name == 'task1'
     
+    def test_case_control_dataset_0(self,tmpdir):
+        gen_connectomes(tmpdir)
+        gen_pheno(tmpdir)
+        p_pheno = os.path.join(tmpdir,'pheno.csv')
+        data = caseControlDataset('task1',p_pheno,tmpdir,format=0)
+        assert data.__getitem__(0)[0].shape[0] == 2080
+    
+    def test_case_control_dataset_1(self,tmpdir):
+        gen_connectomes(tmpdir)
+        gen_pheno(tmpdir)
+        p_pheno = os.path.join(tmpdir,'pheno.csv')
+        data = caseControlDataset('task1',p_pheno,tmpdir,format=1)
+        assert data.__getitem__(0)[0].shape == (40,52)
+    
+    def test_case_control_dataset_2(self,tmpdir):
+        gen_connectomes(tmpdir)
+        gen_pheno(tmpdir)
+        p_pheno = os.path.join(tmpdir,'pheno.csv')
+        data = caseControlDataset('task1',p_pheno,tmpdir,format=2)
+        assert data.__getitem__(0)[0].shape == (64,64)
+    
     def test_dataloader(self,tmpdir):
         data = gen_case_con_dataset(tmpdir,n_cases=100)
         _, trainloaders, testloaders = gen_model_and_loaders(data,shuffle=False)
