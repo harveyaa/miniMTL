@@ -14,7 +14,7 @@ echo $log_dir
 mkdir $log_dir
 
 base_dir="/home/aharvey/MTL/miniMTL/examples/arch_search"
-script="$base_dir/arch_search.py"
+script="/home/aharvey/MTL/miniMTL/examples/hps.py"
 summarize_groups="$base_dir/groups/summarize_groups.py"
 data_dir='/home/aharvey/MTL/data'
 

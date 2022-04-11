@@ -10,7 +10,7 @@ head=$2
 n_tasks=$3
 
 base_dir="/home/harveyaa/Documents/masters/MTL/miniMTL/examples/arch_search/groups"
-script="/home/harveyaa/Documents/masters/MTL/miniMTL/examples/arch_search/arch_search.py"
+script="/home/harveyaa/Documents/masters/MTL/miniMTL/examples/hps.py"
 summarize_groups="$base_dir/summarize_groups.py"
 
 log_dir="$base_dir/model_$encoder$head"

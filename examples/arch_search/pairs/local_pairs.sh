@@ -9,7 +9,7 @@ encoder=$1
 head=$2
 
 base_dir="/home/harveyaa/Documents/masters/MTL/miniMTL/examples/arch_search/pairs"
-script="/home/harveyaa/Documents/masters/MTL/miniMTL/examples/arch_search/arch_search.py"
+script="/home/harveyaa/Documents/masters/MTL/miniMTL/examples/hps.py"
 summarize_pairs="$base_dir/summarize_pairs.py"
 
 log_dir="$base_dir/model_$encoder$head"
