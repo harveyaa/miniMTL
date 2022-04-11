@@ -6,6 +6,23 @@ import os
 import torch
 from torch.utils.data import Dataset
 
+def vec_to_connectome(a,dim=64):
+    """
+    Turn a vector representation of lower triangular matrix to connectome.
+    
+    a = vector
+    dim = dimension of connectome
+    
+    Returns:
+    dim x dim connectome
+    """
+    A = np.zeros((dim,dim))
+    mask = np.tri(dim,dtype=bool, k=0)
+    A[mask]=a
+    B = np.array(A).transpose()
+    np.fill_diagonal(B,0)
+    return A + B
+
 def strat_mask(pheno,case,control,stratify = 'SITE',seed=0):
     """ Get a mask for pheno with all the specified cases & controls matched
         for the `stratify` category.
@@ -45,7 +62,7 @@ def strat_mask(pheno,case,control,stratify = 'SITE',seed=0):
     return case_mask + control_mask
 
 class caseControlDataset(Dataset):
-    def __init__(self,case,pheno_path,conn_path,dim=2,seed=0):
+    def __init__(self,case,pheno_path,conn_path,format=1,seed=0):
         """
         Create a dataset for a given case/control group.
         - Controls
@@ -64,20 +81,22 @@ class caseControlDataset(Dataset):
             Path to phenotype .csv file.
         conn_path: str
             Path to directory containing connectomes (in square format).
-        dim: int
-            1: X is a vector, 2: X is a 2d array (needed for conv models).
+        format: int
+            0: vector of 2080
+            1: shuffled 2d array 40x52
+            2: connectome of 64x64
         seed: int
             Seed to fix the random shuffle of the vector into 2d array.
         """
-        assert ((dim == 1)|(dim == 2))
-        self.dim = dim
+        assert format in [0,1,2]
+        self.format = format
         self.seed = seed
         self.name = case
 
         control = 'non_carriers'
         if case in ['SZ','ADHD','BIP','ASD']:
             control = 'CON_IPC'
-        conn_path = os.path.join(conn_path,'connectome_{}_cambridge64.npy')
+        self.conn_path = os.path.join(conn_path,'connectome_{}_cambridge64.npy')
 
         pheno = pd.read_csv(pheno_path,index_col=0)
 
@@ -85,11 +104,11 @@ class caseControlDataset(Dataset):
         
         #pis = pheno[pheno[case]==1]['PI'].unique()
         #idx = pheno[(pheno['PI'].isin(pis))&((pheno[case]==1)|pheno[control]==1)].index
-        idx = pheno[subject_mask].index
-        mask = np.tri(64,dtype=bool)
+        self.idx = pheno[subject_mask].index
+        #mask = np.tri(64,dtype=bool)
 
-        self.X = np.array([np.load(conn_path.format(sub_id))[mask] for sub_id in idx])
-        self.Y = pheno.loc[idx][case].values.astype(int)
+        #self.X = np.array([np.load(conn_path.format(sub_id))[mask] for sub_id in idx])
+        self.Y = pheno.loc[self.idx][case].values.astype(int)
 
         del pheno
 
@@ -101,16 +120,24 @@ class caseControlDataset(Dataset):
         Returns
         -------
         X: array
-            Either a vector or randomly shuffled 2d array.
+            Either a vector or randomly shuffled 2d array or connectome.
         Y: dict[str:array]
             Dictionary from dataset name to labels (array of int).
         """
-        vec = self.X[idx,:]
-        if self.dim == 1:
-            return vec, {self.name:self.Y[idx]}
-        else:
+        sub_id = self.idx[idx]
+        conn = np.load(self.conn_path.format(sub_id))#[mask]
+        mask = np.tri(64,dtype=bool)
+
+        #vec = self.X[idx,:]
+        if self.format == 0:
+            #return vec, {self.name:self.Y[idx]}
+            return conn[mask], {self.name:self.Y[idx]}
+        elif self.format == 1:
             np.random.seed(self.seed)
-            return vec[np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
+            #return vec[np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
+            return conn[mask][np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
+        else:
+            return conn, {self.name:self.Y[idx]}
 
 class ukbbSexDataset(Dataset):
     def __init__(self,pheno_path,conn_path,dim=2,seed=0):
