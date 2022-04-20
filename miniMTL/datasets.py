@@ -84,7 +84,7 @@ class caseControlDataset(Dataset):
         format: int
             0: vector of 2080
             1: shuffled 2d array 40x52
-            2: connectome of 64x64
+            2: connectome of 1x64x64
         seed: int
             Seed to fix the random shuffle of the vector into 2d array.
         """
@@ -102,12 +102,8 @@ class caseControlDataset(Dataset):
 
         subject_mask = strat_mask(pheno,case,control,seed=seed)
         
-        #pis = pheno[pheno[case]==1]['PI'].unique()
-        #idx = pheno[(pheno['PI'].isin(pis))&((pheno[case]==1)|pheno[control]==1)].index
         self.idx = pheno[subject_mask].index
-        #mask = np.tri(64,dtype=bool)
 
-        #self.X = np.array([np.load(conn_path.format(sub_id))[mask] for sub_id in idx])
         self.Y = pheno.loc[self.idx][case].values.astype(int)
 
         del pheno
@@ -128,16 +124,13 @@ class caseControlDataset(Dataset):
         conn = np.load(self.conn_path.format(sub_id))#[mask]
         mask = np.tri(64,dtype=bool)
 
-        #vec = self.X[idx,:]
         if self.format == 0:
-            #return vec, {self.name:self.Y[idx]}
             return conn[mask], {self.name:self.Y[idx]}
         elif self.format == 1:
             np.random.seed(self.seed)
-            #return vec[np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
             return conn[mask][np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
         else:
-            return conn, {self.name:self.Y[idx]}
+            return torch.unsqueeze(torch.from_numpy(conn),0), {self.name:self.Y[idx]}
 
 class ukbbSexDataset(Dataset):
     def __init__(self,pheno_path,conn_path,dim=2,seed=0):
