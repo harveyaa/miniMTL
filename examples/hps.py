@@ -17,6 +17,7 @@ if __name__ == "__main__":
     parser.add_argument("--head",help="Which head to use.",dest='head',default=0,type=int)
     parser.add_argument("--data_dir",help="path to data dir",dest='data_dir',
                         default='/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/')
+    parser.add_argument("--data_format",help="data format code",dest='data_format',default=1,type=int)
     parser.add_argument("--log_dir",help="path to log_dir",dest='log_dir',default=None)
     parser.add_argument("--batch_size",help="batch size for training/test loaders",default=16,type=int)
     parser.add_argument("--lr",help="learning rate for training",default=1e-3,type=float)
@@ -42,7 +43,7 @@ if __name__ == "__main__":
     data = []
     for case in cases:
         print(case)
-        data.append(caseControlDataset(case,p_pheno,p_conn))
+        data.append(caseControlDataset(case,p_pheno,p_conn,format=args.data_format))
     print('Done!\n')
     
     # Split data & create loaders & loss fns
@@ -56,10 +57,10 @@ if __name__ == "__main__":
         trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
         testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
         loss_fns[case] = nn.CrossEntropyLoss()
-        decoders[case] = head0().double()
+        decoders[case] = eval(f'head{args.head}().double()')
     
     # Create model
-    model = HPSModel(encoder0().double(),
+    model = HPSModel(eval(f'encoder{args.encoder}().double()'),
                 decoders,
                 loss_fns)
     
