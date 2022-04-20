@@ -78,9 +78,10 @@ class head0(nn.Module):
 # NICOLAS FARRUGIA
 class E2EBlock(torch.nn.Module):
     '''E2Eblock.'''
-    def __init__(self, in_planes, planes,example,bias=False):
+    #def __init__(self, in_planes, planes,example,bias=False):
+    def __init__(self, in_planes, planes,d=64,bias=False):
         super(E2EBlock, self).__init__()
-        self.d = example.size(3)
+        self.d = d#example.size(3)
         self.cnn1 = torch.nn.Conv2d(in_planes,planes,(1,self.d),bias=bias)
         self.cnn2 = torch.nn.Conv2d(in_planes,planes,(self.d,1),bias=bias)
 
@@ -91,13 +92,14 @@ class E2EBlock(torch.nn.Module):
 
 
 class BrainNetCNN(torch.nn.Module):
-    def __init__(self, example, num_classes=10):
+    #def __init__(self, example, num_classes=10):
+    def __init__(self, in_planes=1,d=64, num_classes=2):
         super(BrainNetCNN, self).__init__()
-        self.in_planes = example.size(1)
-        self.d = example.size(3)
+        self.in_planes = in_planes
+        self.d = d
         
-        self.e2econv1 = E2EBlock(1,32,example,bias=True)
-        self.e2econv2 = E2EBlock(32,64,example,bias=True)
+        self.e2econv1 = E2EBlock(self.in_planes,32,d=self.d,bias=True)
+        self.e2econv2 = E2EBlock(32,64,d=self.d,bias=True)
         self.E2N = torch.nn.Conv2d(64,1,(1,self.d))
         self.N2G = torch.nn.Conv2d(1,256,(self.d,1))
         self.dense1 = torch.nn.Linear(256,128)
@@ -113,5 +115,117 @@ class BrainNetCNN(torch.nn.Module):
         out = F.dropout(F.leaky_relu(self.dense1(out),negative_slope=0.33),p=0.5)
         out = F.dropout(F.leaky_relu(self.dense2(out),negative_slope=0.33),p=0.5)
         out = F.leaky_relu(self.dense3(out),negative_slope=0.33)
-        
         return out
+
+
+class encoder1(torch.nn.Module):
+    "BrainNetCNN"
+    #def __init__(self, example, num_classes=10):
+    def __init__(self, in_planes=1,d=64, num_classes=2):
+        super().__init__()
+        self.in_planes = in_planes
+        self.d = d
+        
+        self.e2econv1 = E2EBlock(self.in_planes,32,d=self.d,bias=True)
+        self.e2econv2 = E2EBlock(32,64,d=self.d,bias=True)
+        self.E2N = torch.nn.Conv2d(64,1,(1,self.d))
+        self.N2G = torch.nn.Conv2d(1,256,(self.d,1))
+        self.dense1 = torch.nn.Linear(256,128)
+        self.dense2 = torch.nn.Linear(128,30)
+
+        #self.dense3 = torch.nn.Linear(30,2)
+        
+    def forward(self, x):
+        out = F.relu(self.e2econv1(x))
+        out = F.relu(self.e2econv2(out)) 
+        out = F.relu(self.E2N(out))
+        out = F.dropout(F.relu(self.N2G(out)),p=0.5)
+        out = out.view(out.size(0), -1)
+        out = F.dropout(F.leaky_relu(self.dense1(out),negative_slope=0.33),p=0.5)
+        out = F.dropout(F.leaky_relu(self.dense2(out),negative_slope=0.33),p=0.5)
+
+        #out = F.leaky_relu(self.dense3(out),negative_slope=0.33)
+        return out
+
+class head1(torch.nn.Module):
+    "BrainNetCNN"
+    #def __init__(self, example, num_classes=10):
+    def __init__(self, in_planes=1,d=64, num_classes=2):
+        super().__init__()
+        self.in_planes = in_planes #example.size(1)
+        self.d = d #example.size(3)
+        
+        #self.e2econv1 = E2EBlock(self.in_planes,32,d=self.d,bias=True)
+        #self.e2econv2 = E2EBlock(32,64,d=self.d,bias=True)
+        #self.E2N = torch.nn.Conv2d(64,1,(1,self.d))
+        #self.N2G = torch.nn.Conv2d(1,256,(self.d,1))
+        #self.dense1 = torch.nn.Linear(256,128)
+        #self.dense2 = torch.nn.Linear(128,30)
+
+        self.dense3 = torch.nn.Linear(30,2)
+        
+    def forward(self, out):
+        #out = F.leaky_relu(self.e2econv1(x),negative_slope=0.33)
+        #out = F.leaky_relu(self.e2econv2(out),negative_slope=0.33) 
+        #out = F.leaky_relu(self.E2N(out),negative_slope=0.33)
+        #out = F.dropout(F.leaky_relu(self.N2G(out),negative_slope=0.33),p=0.5)
+        #out = out.view(out.size(0), -1)
+        #out = F.dropout(F.relu(self.dense1(out)),p=0.5)
+        #out = F.dropout(F.relu(self.dense2(out)),p=0.5)
+
+        out = F.relu(self.dense3(out))
+        return out
+
+class CCNN(torch.nn.Module):
+    def __init__(self,d=64):
+        super().__init__()
+        self.d = d
+        
+        self.conv1 = torch.nn.Conv2d(1,64,(1,self.d))
+        self.conv2 = torch.nn.Conv2d(64,128,(self.d,1))
+        self.fc1 = torch.nn.Linear(128,96)
+        self.fc2 = torch.nn.Linear(96,2)
+
+    def forward(self,x):
+        x = F.dropout(F.relu(self.conv1(x)),p=0.5)
+        x = F.dropout(F.relu(self.conv2(x)),p=0.5)
+        x = x.view(x.size(0), -1)
+        x = F.dropout(F.relu(self.fc1(x)),p=0.5)
+        x = F.dropout(F.relu(self.fc2(x)),p=0.5)
+        return x
+
+class encoder2(torch.nn.Module):
+    def __init__(self,d=64):
+        super().__init__()
+        self.d = d
+        
+        self.conv1 = torch.nn.Conv2d(1,64,(1,self.d))
+        self.conv2 = torch.nn.Conv2d(64,128,(self.d,1))
+        self.fc1 = torch.nn.Linear(128,96)
+        #self.fc2 = torch.nn.Linear(96,2)
+
+    def forward(self,x):
+        x = F.dropout(F.relu(self.conv1(x)),p=0.5)
+        x = F.dropout(F.relu(self.conv2(x)),p=0.5)
+        x = x.view(x.size(0), -1)
+        x = F.dropout(F.relu(self.fc1(x)),p=0.5)
+        #x = F.dropout(F.relu(self.fc2(x)),p=0.5)
+        return x
+
+class head2(torch.nn.Module):
+    def __init__(self,d=64):
+        super().__init__()
+        self.d = d
+        
+        #self.conv1 = torch.nn.Conv2d(1,64,(1,self.d))
+        #self.conv2 = torch.nn.Conv2d(64,128,(self.d,1))
+        #self.fc1 = torch.nn.Linear(128,96)
+        self.fc2 = torch.nn.Linear(96,2)
+
+    def forward(self,x):
+        #x = F.dropout(F.relu(self.conv1(x)),p=0.5)
+        #x = F.dropout(F.relu(self.conv2(x)),p=0.5)
+        #x = x.view(x.size(0), -1)
+        #x = F.dropout(F.relu(self.fc1(x)),p=0.5)
+        x = F.dropout(F.relu(self.fc2(x)),p=0.5)
+        return x
