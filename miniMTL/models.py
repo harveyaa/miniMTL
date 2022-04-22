@@ -202,14 +202,14 @@ class encoder2(torch.nn.Module):
         self.conv1 = torch.nn.Conv2d(1,64,(1,self.d))
         self.conv2 = torch.nn.Conv2d(64,128,(self.d,1))
         self.fc1 = torch.nn.Linear(128,96)
-        #self.fc2 = torch.nn.Linear(96,2)
+        self.fc2 = torch.nn.Linear(96,64)
 
     def forward(self,x):
         x = F.dropout(F.relu(self.conv1(x)),p=0.5)
         x = F.dropout(F.relu(self.conv2(x)),p=0.5)
         x = x.view(x.size(0), -1)
         x = F.dropout(F.relu(self.fc1(x)),p=0.5)
-        #x = F.dropout(F.relu(self.fc2(x)),p=0.5)
+        x = F.dropout(F.relu(self.fc2(x)),p=0.5)
         return x
 
 class head2(torch.nn.Module):
@@ -220,12 +220,16 @@ class head2(torch.nn.Module):
         #self.conv1 = torch.nn.Conv2d(1,64,(1,self.d))
         #self.conv2 = torch.nn.Conv2d(64,128,(self.d,1))
         #self.fc1 = torch.nn.Linear(128,96)
-        self.fc2 = torch.nn.Linear(96,2)
+        #self.fc2 = torch.nn.Linear(96,2)
+        self.fc3 = torch.nn.Linear(64,64)
+        self.fc4 = torch.nn.Linear(64,2)
 
     def forward(self,x):
         #x = F.dropout(F.relu(self.conv1(x)),p=0.5)
         #x = F.dropout(F.relu(self.conv2(x)),p=0.5)
         #x = x.view(x.size(0), -1)
         #x = F.dropout(F.relu(self.fc1(x)),p=0.5)
-        x = F.dropout(F.relu(self.fc2(x)),p=0.5)
+        #x = F.dropout(F.relu(self.fc2(x)),p=0.5)
+        x = F.dropout(F.relu(self.fc3(x)),p=0.5)
+        x = F.dropout(F.relu(self.fc4(x)),p=0.5)
         return x
