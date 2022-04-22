@@ -132,6 +132,74 @@ class caseControlDataset(Dataset):
         else:
             return torch.unsqueeze(torch.from_numpy(conn),0), {self.name:self.Y[idx]}
 
+
+class balancedCaseControlDataset(Dataset):
+    def __init__(self,case,id_path,conn_path,format=1,seed=0):
+        """
+        Create a dataset for a given case/control group.
+        - Controls
+            - idiopathic conditions: uses all 'CON_IPC' as controls
+            - CNVs: uses 'non_carriers' from each PI
+        - `case` becomes the dataset name
+            - must match task names used to define HPSModel
+        - Labels are returned as a dictionary from dataset name to array of int
+        TODO: construct groups more carefully.
+
+        Parameters
+        ----------
+        case: str
+            Label of case to build dataset for (e.g. 'DEL22q11_2').
+        pheno_path: str
+            Path to phenotype .csv file.
+        conn_path: str
+            Path to directory containing connectomes (in square format).
+        format: int
+            0: vector of 2080
+            1: shuffled 2d array 40x52
+            2: connectome of 1x64x64
+        seed: int
+            Seed to fix the random shuffle of the vector into 2d array.
+        """
+        assert format in [0,1,2]
+        self.format = format
+        self.seed = seed
+        self.name = case
+        self.conn_path = os.path.join(conn_path,'connectome_{}_cambridge64.npy')
+        self.ids = pd.read_csv(os.path.join(id_path,f"{case}.csv"),index_col=0)
+
+        self.Y = self.ids[case].values.astype(int)
+
+    def __len__(self):
+        return len(self.Y)
+        
+    def __getitem__(self,idx):
+        """
+        Returns
+        -------
+        X: array
+            Either a vector or randomly shuffled 2d array or connectome.
+        Y: dict[str:array]
+            Dictionary from dataset name to labels (array of int).
+        """
+        sub_id = self.ids.index[idx]
+        conn = np.load(self.conn_path.format(sub_id))#[mask]
+        mask = np.tri(64,dtype=bool)
+
+        if self.format == 0:
+            return conn[mask], {self.name:self.Y[idx]}
+        elif self.format == 1:
+            np.random.seed(self.seed)
+            return conn[mask][np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
+        else:
+            return torch.unsqueeze(torch.from_numpy(conn),0), {self.name:self.Y[idx]}
+    
+    def split_data(self,fold=0):
+        rr = np.array(range(len(self.ids)))
+        train_idx = rr[self.ids[f"fold_{fold}"] == 0]
+        test_idx = rr[self.ids[f"fold_{fold}"] == 1]
+        return train_idx, test_idx
+
+
 class ukbbSexDataset(Dataset):
     def __init__(self,pheno_path,conn_path,dim=2,seed=0):
         assert ((dim == 1)|(dim == 2))
