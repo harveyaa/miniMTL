@@ -136,21 +136,21 @@ class caseControlDataset(Dataset):
 class balancedCaseControlDataset(Dataset):
     def __init__(self,case,id_path,conn_path,format=1,seed=0):
         """
-        Create a dataset for a given case/control group.
+        Load a balanced dataset for a given case/control group.
         - Controls
-            - idiopathic conditions: uses all 'CON_IPC' as controls
-            - CNVs: uses 'non_carriers' from each PI
+            - matched using mleming general class balancer.
+        - CV folds
+            - semi-balanced test sets created using hybrid of pymatch and mleming.
         - `case` becomes the dataset name
             - must match task names used to define HPSModel
         - Labels are returned as a dictionary from dataset name to array of int
-        TODO: construct groups more carefully.
 
         Parameters
         ----------
         case: str
             Label of case to build dataset for (e.g. 'DEL22q11_2').
-        pheno_path: str
-            Path to phenotype .csv file.
+        id_path: str
+            Path to direcotry containing .csv files with CV fold ids.
         conn_path: str
             Path to directory containing connectomes (in square format).
         format: int
@@ -190,15 +190,98 @@ class balancedCaseControlDataset(Dataset):
         elif self.format == 1:
             np.random.seed(self.seed)
             return conn[mask][np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
-        else:
+        elif self.format == 2:
             return torch.unsqueeze(torch.from_numpy(conn),0), {self.name:self.Y[idx]}
-    
+
     def split_data(self,fold=0):
+        """ Split data into balanced test sets (pre-generated) for cross validation.
+        
+        Parameters
+        ----------
+        fold: int
+            Which fold of cross validation ids to load.
+        
+        Returns
+        -------
+        train_idx: array of int
+        test_idx: array of int
+        """
         rr = np.array(range(len(self.ids)))
         train_idx = rr[self.ids[f"fold_{fold}"] == 0]
         test_idx = rr[self.ids[f"fold_{fold}"] == 1]
         return train_idx, test_idx
 
+class balancedConfoundsDataset(Dataset):
+    def __init__(self,case,id_path,pheno_path):
+        """
+        Load a balanced dataset of confounds for a given case/control group.
+        - Controls
+            - matched using mleming general class balancer.
+        - CV folds
+            - semi-balanced test sets created using hybrid of pymatch and mleming.
+        - `case` becomes the dataset name
+            - must match task names used to define HPSModel
+        - Labels are returned as a dictionary from dataset name to array of int
+
+        Parameters
+        ----------
+        case: str
+            Label of case to build dataset for (e.g. 'DEL22q11_2').
+        id_path: str
+            Path to direcotry containing .csv files with CV fold ids.
+        pheno_path: str
+            Path to phenotype .csv file.
+        confounds: list of str
+            Which confounds to return.
+        """
+        self.name = case
+        self.ids = pd.read_csv(os.path.join(id_path,f"{case}.csv"),index_col=0)
+
+        confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']
+        pheno = pd.read_csv(pheno_path,index_col=0)
+        p = pd.get_dummies(pheno[confounds],['SEX','SITE'])
+        sex_cols = [c for c in p.columns if 'SEX' in c ]
+        site_cols = [c for c in p.columns if 'SITE' in c ]
+        cols = ['AGE','mean_conn', 'FD_scrubbed'] + sex_cols + site_cols
+        self.X = p[cols]
+        self.dim = self.X.shape[1]
+        del pheno
+        del p
+
+        self.Y = self.ids[case].values.astype(int)
+
+    def __len__(self):
+        return len(self.Y)
+        
+    def __getitem__(self,idx):
+        """
+        Returns
+        -------
+        X: array
+            Vector of confounds.
+        Y: dict[str:array]
+            Dictionary from dataset name to labels (array of int).
+        """
+
+        return self.X.iloc[idx].values, {self.name:self.Y[idx]}
+
+    def split_data(self,fold=0):
+        """ Split data into balanced test sets (pre-generated) for cross validation.
+        
+        Parameters
+        ----------
+        fold: int
+            Which fold of cross validation ids to load.
+        
+        Returns
+        -------
+        train_idx: array of int
+        test_idx: array of int
+        """
+        rr = np.array(range(len(self.ids)))
+        train_idx = rr[self.ids[f"fold_{fold}"] == 0]
+        test_idx = rr[self.ids[f"fold_{fold}"] == 1]
+        return train_idx, test_idx
 
 class ukbbSexDataset(Dataset):
     def __init__(self,pheno_path,conn_path,dim=2,seed=0):
