@@ -7,6 +7,7 @@ from miniMTL.datasets import balancedConfoundsDataset
 from miniMTL.models import *
 from miniMTL.training import Trainer
 from miniMTL.hps import HPSModel
+from miniMTL.util import split_data
 
 from argparse import ArgumentParser
 
@@ -24,6 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr",help="learning rate for training",default=1e-3,type=float)
     parser.add_argument("--num_epochs",help="num_epochs for training",default=100,type=int)
     parser.add_argument("--fold",help="fold of CV",default=0,type=int)
+    parser.add_argument("--rand_test",help="use random test sets.",action='store_true')
     args = parser.parse_args()
     
     print('#############\n# HPS model #\n#############')
@@ -49,20 +51,34 @@ if __name__ == "__main__":
         data.append(balancedConfoundsDataset(case,p_ids,p_pheno))
     print('Done!\n')
 
-    # Split data & create loaders & loss fns
-    loss_fns = {}
-    trainloaders = {}
-    testloaders = {}
-    decoders = {}
-    for d, case in zip(data,cases):
-        train_idx, test_idx = d.split_data(args.fold)
-        train_d = Subset(d,train_idx)
-        test_d = Subset(d,test_idx)
+    if args.rand_test:
+        # Split data & create loaders & loss fns
+        loss_fns = {}
+        trainloaders = {}
+        testloaders = {}
+        decoders = {}
+        for d, case in zip(data,cases):
+            train_d, test_d = split_data(d)
 
-        trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
-        testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
-        loss_fns[case] = nn.CrossEntropyLoss()
-        decoders[case] = eval(f'head{args.head}().double()')
+            trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
+            testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
+            loss_fns[case] = nn.CrossEntropyLoss()
+            decoders[case] = eval(f'head{args.head}().double()')
+    else:
+        # Split data & create loaders & loss fns
+        loss_fns = {}
+        trainloaders = {}
+        testloaders = {}
+        decoders = {}
+        for d, case in zip(data,cases):
+            train_idx, test_idx = d.split_data(args.fold)
+            train_d = Subset(d,train_idx)
+            test_d = Subset(d,test_idx)
+
+            trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
+            testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
+            loss_fns[case] = nn.CrossEntropyLoss()
+            decoders[case] = eval(f'head{args.head}().double()')
     
     # Create model
     model = HPSModel(eval(f'encoder{args.encoder}().double()'),
