@@ -105,6 +105,8 @@ class BrainNetCNN(torch.nn.Module):
         self.dense1 = torch.nn.Linear(256,128)
         self.dense2 = torch.nn.Linear(128,30)
         self.dense3 = torch.nn.Linear(30,2)
+
+        self.softmax = nn.Softmax(dim=1)
         
     def forward(self, x):
         out = F.leaky_relu(self.e2econv1(x),negative_slope=0.33)
@@ -115,6 +117,7 @@ class BrainNetCNN(torch.nn.Module):
         out = F.dropout(F.leaky_relu(self.dense1(out),negative_slope=0.33),p=0.5)
         out = F.dropout(F.leaky_relu(self.dense2(out),negative_slope=0.33),p=0.5)
         out = F.leaky_relu(self.dense3(out),negative_slope=0.33)
+        out = self.softmax(out)
         return out
 
 
@@ -164,6 +167,7 @@ class head1(torch.nn.Module):
         #self.dense2 = torch.nn.Linear(128,30)
 
         self.dense3 = torch.nn.Linear(30,2)
+        self.softmax = nn.Softmax(dim=1)
         
     def forward(self, out):
         #out = F.leaky_relu(self.e2econv1(x),negative_slope=0.33)
@@ -175,6 +179,7 @@ class head1(torch.nn.Module):
         #out = F.dropout(F.relu(self.dense2(out)),p=0.5)
 
         out = F.relu(self.dense3(out))
+        out = self.softmax(out)
         return out
 
 
@@ -187,6 +192,7 @@ class CCNN(torch.nn.Module):
         self.conv2 = torch.nn.Conv2d(64,128,(self.d,1))
         self.fc1 = torch.nn.Linear(128,96)
         self.fc2 = torch.nn.Linear(96,2)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self,x):
         x = F.dropout(F.relu(self.conv1(x)),p=0.5)
@@ -194,6 +200,7 @@ class CCNN(torch.nn.Module):
         x = x.view(x.size(0), -1)
         x = F.dropout(F.relu(self.fc1(x)),p=0.5)
         x = F.dropout(F.relu(self.fc2(x)),p=0.5)
+        x = self.softmax(x)
         return x
 
 
@@ -227,6 +234,7 @@ class head2(torch.nn.Module):
         #self.fc2 = torch.nn.Linear(96,2)
         self.fc3 = torch.nn.Linear(64,64)
         self.fc4 = torch.nn.Linear(64,2)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self,x):
         #x = F.dropout(F.relu(self.conv1(x)),p=0.5)
@@ -236,6 +244,7 @@ class head2(torch.nn.Module):
         #x = F.dropout(F.relu(self.fc2(x)),p=0.5)
         x = F.dropout(F.relu(self.fc3(x)),p=0.5)
         x = F.dropout(F.relu(self.fc4(x)),p=0.5)
+        x = self.softmax(x)
         return x
 
 
@@ -244,17 +253,17 @@ class encoder3(nn.Module):
         super().__init__()
         # in_channels, out_channels
         self.fc1 = nn.Linear(dim, width)
-        self.batch1 = nn.BatchNorm1d(width)
+        #self.batch1 = nn.BatchNorm1d(width)
         self.fc2 = nn.Linear(width, width)
-        self.batch2 = nn.BatchNorm1d(width)
+        #self.batch2 = nn.BatchNorm1d(width)
 
         self.dropout = nn.Dropout()
     
     def forward(self,x):
         x = self.dropout(F.relu(self.fc1(x)))
-        x = self.batch1(x)
+        #x = self.batch1(x)
         x = self.dropout(F.relu(self.fc2(x)))
-        x = self.batch2(x)
+        #x = self.batch2(x)
         return x
 
 
@@ -262,7 +271,7 @@ class head3(nn.Module):
     def __init__(self,width=10):
         super().__init__()
         self.fc3 = nn.Linear(width,width)
-        self.batch3 = nn.BatchNorm1d(width)
+        #self.batch3 = nn.BatchNorm1d(width)
         self.fc4 = nn.Linear(width,2)
 
         self.dropout = nn.Dropout()
@@ -270,6 +279,7 @@ class head3(nn.Module):
     
     def forward(self,x):
         x = self.dropout(F.relu(self.fc3(x)))
-        x = self.batch3(x)
+        #x = self.batch3(x)
         x = self.dropout(F.relu(self.fc4(x)))
+        x = self.softmax(x)
         return x
