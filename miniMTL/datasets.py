@@ -150,7 +150,7 @@ class balancedCaseControlDataset(Dataset):
         case: str
             Label of case to build dataset for (e.g. 'DEL22q11_2').
         id_path: str
-            Path to direcotry containing .csv files with CV fold ids.
+            Path to directory containing .csv files with CV fold ids.
         conn_path: str
             Path to directory containing connectomes (in square format).
         format: int
