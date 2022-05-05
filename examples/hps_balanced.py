@@ -83,18 +83,10 @@ if __name__ == "__main__":
             trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
             testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
             loss_fns[case] = nn.CrossEntropyLoss()
-            if args.head == 3:
-                decoders[case] = eval(f'head{args.head}(width={args.width}).double()')
-            else:
-                decoders[case] = eval(f'head{args.head}().double()')
+            decoders[case] = eval(f'head{args.head}().double()')
     
     # Create model
-    if args.encoder == 3:
-        model = HPSModel(eval(f'encoder{args.encoder}(dim={args.dim},width={args.width}).double()'),
-                    decoders,
-                    loss_fns)
-    else:
-        model = HPSModel(eval(f'encoder{args.encoder}().double()'),
+    model = HPSModel(eval(f'encoder{args.encoder}().double()'),
                     decoders,
                     loss_fns)
     
