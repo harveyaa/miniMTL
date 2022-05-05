@@ -27,8 +27,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_epochs",help="num_epochs for training",default=100,type=int)
     parser.add_argument("--fold",help="fold of CV",default=0,type=int)
     parser.add_argument("--rand_test",help="use random test sets.",action='store_true')
-    parser.add_argument("--dim",help="dim for model 3",default=2080,type=int)
-    parser.add_argument("--width",help="width for model 3",default=64,type=int)
     args = parser.parse_args()
     
     print('#############\n# HPS model #\n#############')
@@ -65,10 +63,7 @@ if __name__ == "__main__":
             trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
             testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
             loss_fns[case] = nn.CrossEntropyLoss()
-            if args.head == 3:
-                decoders[case] = eval(f'head{args.head}(width={args.width}).double()')
-            else:
-                decoders[case] = eval(f'head{args.head}().double()')
+            decoders[case] = eval(f'head{args.head}().double()')
     else:
         # Split data & create loaders & loss fns
         loss_fns = {}
