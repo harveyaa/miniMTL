@@ -253,7 +253,7 @@ class encoder3(nn.Module):
     def __init__(self):
         super().__init__()
         # in_channels, out_channels
-        self.fc1 = nn.Linear(256)
+        self.fc1 = nn.Linear(2080,256)
         self.batch1 = nn.BatchNorm1d(256)
         self.fc2 = nn.Linear(256, 16)
         self.batch2 = nn.BatchNorm1d(16)
