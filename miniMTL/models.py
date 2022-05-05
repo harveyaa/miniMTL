@@ -249,37 +249,38 @@ class head2(torch.nn.Module):
 
 
 class encoder3(nn.Module):
-    def __init__(self,dim=58,width=10):
+    """ Simple MLP for connectome 2080 vec."""
+    def __init__(self):
         super().__init__()
         # in_channels, out_channels
-        self.fc1 = nn.Linear(dim, width)
-        #self.batch1 = nn.BatchNorm1d(width)
-        self.fc2 = nn.Linear(width, width)
-        #self.batch2 = nn.BatchNorm1d(width)
+        self.fc1 = nn.Linear(256)
+        self.batch1 = nn.BatchNorm1d(256)
+        self.fc2 = nn.Linear(256, 16)
+        self.batch2 = nn.BatchNorm1d(16)
 
         self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
     
     def forward(self,x):
-        x = self.dropout(F.relu(self.fc1(x)))
-        #x = self.batch1(x)
-        x = self.dropout(F.relu(self.fc2(x)))
-        #x = self.batch2(x)
+        x = self.dropout(self.leaky(self.fc1(x)))
+        x = self.batch1(x)
+        x = self.dropout(self.leaky(self.fc2(x)))
+        x = self.batch2(x)
         return x
 
 
 class head3(nn.Module):
-    def __init__(self,width=10):
+    def __init__(self):
         super().__init__()
-        self.fc3 = nn.Linear(width,width)
-        #self.batch3 = nn.BatchNorm1d(width)
-        self.fc4 = nn.Linear(width,2)
+        self.fc3 = nn.Linear(16,2)
+        #self.batch3 = nn.BatchNorm1d(8)
+        #self.fc4 = nn.Linear(8,2)
 
         self.dropout = nn.Dropout()
-        self.softmax = nn.Softmax(dim=1)
+        self.leaky = nn.LeakyReLU()
     
     def forward(self,x):
-        x = self.dropout(F.relu(self.fc3(x)))
+        x = self.dropout(self.leaky(self.fc3(x)))
         #x = self.batch3(x)
-        x = self.dropout(F.relu(self.fc4(x)))
-        x = self.softmax(x)
+        #x = self.dropout(self.leaky(self.fc4(x)))
         return x
