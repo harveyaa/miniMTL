@@ -127,7 +127,8 @@ class Trainer:
                     self.logger.add_scalar(task, "Loss/test",metrics[task]['loss'],epoch_num)
                     self.logger.add_scalar(task, "Accuracy/test",metrics[task]['accuracy'],epoch_num)
 
-            self.lr_scheduler.step()
+            if self.lr_scheduler is not None:
+                self.lr_scheduler.step()
 
         self.writer.flush()
         self.writer.close()
