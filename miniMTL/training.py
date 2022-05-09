@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from tqdm import tqdm
+from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from miniMTL.logging import Logger
 
@@ -40,19 +41,28 @@ def get_batches(dataloaders, shuffle=True,seed=0):
 
 
 class Trainer:
-    def __init__(self,optimizer,num_epochs=100,log_dir=None):
+    def __init__(self,optimizer,lr_scheduler=None,num_epochs=100,clip_grad=True,max_grad=1,log_dir=None):
         """
         Parameters
         ----------
         optimizer: Optimizer
             torch Optimizer object.
+        lr_scheduler: LRScheduler, default=None
+            torch LRScheduler object, initialized with corresponding optimizer.
         num_epochs: int
             Number of epochs to train for.
+        clip_grad: bool, default=True
+            Wether or not to clip gradient norm.
+        max_grad: float, default=1
+            Maximum gradient to clip.
         log_dir: str, default=None
             Path to log directory.
         """
         self.optimizer = optimizer
+        self.lr_scheduler = lr_scheduler
         self.num_epochs = num_epochs
+        self.clip_grad = clip_grad
+        self.max_grad = max_grad
         self.writer = SummaryWriter(log_dir=log_dir)
         self.logger = Logger(log_dir=log_dir)
 
@@ -102,6 +112,8 @@ class Trainer:
                 loss.backward()
 
                 # Clip gradient norm
+                if self.clip_grad:
+                    nn.utils.clip_grad_norm_(model.parameters(), self.max_grad)
 
                 # Update the parameters
                 self.optimizer.step()
@@ -114,6 +126,8 @@ class Trainer:
                     
                     self.logger.add_scalar(task, "Loss/test",metrics[task]['loss'],epoch_num)
                     self.logger.add_scalar(task, "Accuracy/test",metrics[task]['accuracy'],epoch_num)
+
+            self.lr_scheduler.step()
 
         self.writer.flush()
         self.writer.close()
