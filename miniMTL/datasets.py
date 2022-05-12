@@ -50,6 +50,28 @@ def strat_mask(pheno,case,control,stratify = 'SITE',seed=None):
     return case_mask + control_mask
 
 def get_connectome(sub_id,conn_path,format):
+    """ Load & format connectome for given sub_id. 
+    See caseControlDataset class for format description.
+
+    Parameters
+    ----------
+    sub_id: str
+        Subject id.
+    conn_path: str
+        Path to connectome .npy file.
+    format: int
+        Which format (in [0,1,2]).
+    
+    Raises
+    ------
+    ValueError
+        Connectome format (int encoded) must be in [0,1,2].
+
+    Returns
+    -------
+    array or Tensor
+        Connectome in requested format.
+    """
     conn = np.load(conn_path.format(sub_id))
     mask = np.tri(64,dtype=bool)
 
@@ -64,6 +86,30 @@ def get_connectome(sub_id,conn_path,format):
         raise ValueError('Connectome format (int encoded) must be in [0,1,2].')
 
 def get_concat(conf,sub_id,conn_path,format):
+    """ Load & format concatenated confounds and connectome for given sub_id. 
+    See caseControlDataset class for format description.
+
+    Parameters
+    ----------
+    conf: array
+        Vector of confounds.
+    sub_id: str
+        Subject id.
+    conn_path: str
+        Path to connectome .npy file.
+    format: int
+        Which format (in [0,1,2]).
+    
+    Raises
+    ------
+    ValueError
+        Concatenated conn + conf format (int encoded) must be in [0,1].
+
+    Returns
+    -------
+    array or Tensor
+        Concatenated confounds and connectome in requested format.
+    """
     conn = np.load(conn_path.format(sub_id))
     mask = np.tri(64,dtype=bool)
     concat = np.concatenate([conn[mask],conf])
@@ -77,6 +123,33 @@ def get_concat(conf,sub_id,conn_path,format):
         raise ValueError('Concatenated conn + conf format (int encoded) must be in [0,1].')
 
 class caseControlDataset(Dataset):
+    """ Generate a case control dataset for the given case according to the desired parameters.
+
+    Parameters
+    ----------
+    case: str
+        Case label.
+    pheno_path: str
+        Path to pheno .csv file.
+    id_path: str, default=None
+        Path to balanced dataset ids .csv file (needed for 'balanced' strategy).
+    conn_path: str, default=None
+        Path to connectome dir (needed for 'conn' or 'concat' type).
+    type: str, default='concat'
+        Which type of data to use, must be in ['conf','conn','concat']:
+            - conf: one-hot encoded confounds (['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']) (58)
+            - conn: connectome (2080)
+            - concat: concatenated conf + conn (2080 + 58)
+    strategy: str, default='balanced'
+        Which type of dataset to use, must be in ['balanced','stratified']
+            - balanced: fixed datasets & CV splits generated to have balanced test sets.
+            - stratified: random sample of controls matched by site.
+    format: int, default=0
+        Which format to return the data in (must be in [0,1,2] depending on type):
+            - 0: vector (58, 2080, 2080 + 58)
+            - 1: random shuffle of vector into array (N/A, 40x52, 42x51)
+            - 2: full connectome (N/A, N/A, 64x64)
+    """
     def __init__(self,case,pheno_path,id_path=None,conn_path=None,type='concat',strategy='balanced',format=0):
         assert type in ['concat','conn','conf']
         assert strategy in ['balanced','stratified']
@@ -130,6 +203,24 @@ class caseControlDataset(Dataset):
             return concat, {self.name:self.Y[idx]}
     
     def split_data(self,random=True,fold=0,splits=(0.8,0.2),seed=None):
+        """ Split dataset into train & test sets.
+
+        Parameters
+        ----------
+        random: bool, default=True
+            Wether to use random splits, otherwise use balanced test sets 
+            (only compatible with 'balanced' strategy).
+        fold: int, default=0
+            If using 'balanced', which fold of balanced test sets to use.
+        splits: tuple, default=(0.8,0.2)
+            If using random splits, proportion of training & test data respectively.
+        seed: int, default=None
+            If using random splits, fix the random state.
+
+        Returns
+        -------
+        train_idx, test_idx
+        """
         if not random:
             if self.strategy != 'balanced':
                 raise ValueError("Balanced CV folds only available for balanced dataset (set strategy to 'balanced').")
