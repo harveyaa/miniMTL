@@ -43,7 +43,7 @@ if __name__ == "__main__":
     data = []
     for case in cases:
         print(case)
-        data.append(caseControlDataset(case,p_pheno,p_conn,format=args.data_format))
+        data.append(caseControlDataset(case,p_pheno,conn_path=p_conn,type='conn',strategy='stratified',format=args.data_format))
     print('Done!\n')
     
     # Split data & create loaders & loss fns
