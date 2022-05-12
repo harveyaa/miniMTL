@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Subset
 from torch.utils.data import DataLoader
 
-from miniMTL.datasets import balancedCaseControlDataset
+from miniMTL.datasets import caseControlDataset
 from miniMTL.models import *
 from miniMTL.training import Trainer
 from miniMTL.hps import HPSModel
@@ -39,6 +39,7 @@ if __name__ == "__main__":
     print('#############\n')
 
     # Define paths to data
+    p_pheno = os.path.join(args.data_dir,'pheno_01-12-21.csv')
     p_ids = args.id_dir
     p_conn = os.path.join(args.data_dir,'connectomes')
 
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     data = []
     for case in cases:
         print(case)
-        data.append(balancedCaseControlDataset(case,p_ids,p_conn,format=args.data_format))
+        data.append(caseControlDataset(case,p_pheno,ids_path=p_ids,conn_path=p_conn,type='conn',strategy='balanced',format=args.data_format))
     print('Done!\n')
     
     if args.rand_test:
