@@ -1,5 +1,6 @@
 import os
 import torch
+from torch.utils.data import Subset
 from torch.utils.data import DataLoader
 
 from miniMTL.datasets import caseControlDataset
@@ -52,8 +53,9 @@ if __name__ == "__main__":
     testloaders = {}
     decoders = {}
     for d, case in zip(data,cases):
-        train_d, test_d = split_data(d)
-
+        train_idx, test_idx = d.split_data(random=args.rand_test,fold=args.fold)
+        train_d = Subset(d,train_idx)
+        test_d = Subset(d,test_idx)
         trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
         testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
         loss_fns[case] = nn.CrossEntropyLoss()
