@@ -5,7 +5,7 @@ from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from miniMTL.logging import Logger
 
-def get_batches(dataloaders, shuffle=True,seed=0):
+def get_batches(dataloaders, shuffle=True,seed=None):
     """
     Combine batches across DataLoaders for Multi-Task training, in either shuffled or sequential order.
 
@@ -31,9 +31,8 @@ def get_batches(dataloaders, shuffle=True,seed=0):
         dl_indices.extend([idx]*count)
     
     if shuffle:
-        # TODO: seed or not?
-        # Do we want same batch order across eopchs? (guess no)
-        #random.seed(seed)
+        if seed:
+            random.seed(seed)
         random.shuffle(dl_indices)
     
     for idx in dl_indices:
