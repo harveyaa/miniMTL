@@ -58,7 +58,7 @@ def gen_case_con_dataset(dir,n_cases=10,n_tasks=2,seed=0,format=1):
 
     data = {}
     for i in range(n_tasks):
-        data[f'task{i}'] = caseControlDataset(f'task{i}',p_pheno,dir,format=format)
+        data[f'task{i}'] = caseControlDataset(f'task{i}',p_pheno,conn_path=dir,type='conn',strategy='stratified',format=format)
     return data
 
 def gen_model_and_loaders(dataset,batch_size=16,shuffle=True,model=0):
@@ -125,47 +125,51 @@ class head999(nn.Module):
         return x
 
 class TestData:
-    def test_case_control_dataset(self,tmpdir):
+    def test_cc_dataset(self,tmpdir):
         gen_connectomes(tmpdir)
         gen_pheno(tmpdir)
         p_pheno = os.path.join(tmpdir,'pheno.csv')
-        data = caseControlDataset('task1',p_pheno,tmpdir)
+        data = caseControlDataset('task1',p_pheno,conn_path=tmpdir,type='conn',strategy='stratified')
         assert data.name == 'task1'
     
-    def test_case_control_dataset_0(self,tmpdir):
+    def test_cc_dataset_0(self,tmpdir):
         gen_connectomes(tmpdir)
         gen_pheno(tmpdir)
         p_pheno = os.path.join(tmpdir,'pheno.csv')
-        data = caseControlDataset('task1',p_pheno,tmpdir,format=0)
+        data = caseControlDataset('task1',p_pheno,conn_path=tmpdir,type='conn',strategy='stratified',format=0)
         assert data.__getitem__(0)[0].shape[0] == 2080
     
-    def test_case_control_dataset_1(self,tmpdir):
+    def test_cc_dataset_1(self,tmpdir):
         gen_connectomes(tmpdir)
         gen_pheno(tmpdir)
         p_pheno = os.path.join(tmpdir,'pheno.csv')
-        data = caseControlDataset('task1',p_pheno,tmpdir,format=1)
+        data = caseControlDataset('task1',p_pheno,conn_path=tmpdir,type='conn',strategy='stratified',format=1)
         assert data.__getitem__(0)[0].shape == (40,52)
     
-    def test_case_control_dataset_2(self,tmpdir):
+    def test_cc_dataset_2(self,tmpdir):
         gen_connectomes(tmpdir)
         gen_pheno(tmpdir)
         p_pheno = os.path.join(tmpdir,'pheno.csv')
-        data = caseControlDataset('task1',p_pheno,tmpdir,format=2)
+        data = caseControlDataset('task1',p_pheno,conn_path=tmpdir,type='conn',strategy='stratified',format=2)
         assert data.__getitem__(0)[0].shape == (1,64,64)
     
-    def test_balanced_case_control_dataset(self,tmpdir):
+    def test_cc_dataset_balanced(self,tmpdir):
         gen_connectomes(tmpdir)
+        gen_pheno(tmpdir)
         gen_cv_ids(tmpdir)
-        data = balancedCaseControlDataset('task0',tmpdir,tmpdir)
+        p_pheno = os.path.join(tmpdir,'pheno.csv')
+        data = caseControlDataset('task0',p_pheno,id_path=tmpdir,conn_path=tmpdir,type='conn',strategy='balanced')
         assert data.name == 'task0'
     
-    def test_balanced_case_control_split_data(self,tmpdir):
+    def test_cc_balanced_split_data(self,tmpdir):
         gen_connectomes(tmpdir)
-        gen_cv_ids(tmpdir,name='task0')
+        gen_pheno(tmpdir)
+        gen_cv_ids(tmpdir)
+        p_pheno = os.path.join(tmpdir,'pheno.csv')
         ids = pd.read_csv(os.path.join(tmpdir,"task0.csv"),index_col=0)
-        data = balancedCaseControlDataset('task0',tmpdir,tmpdir)
+        data = caseControlDataset('task0',p_pheno,id_path=tmpdir,conn_path=tmpdir,type='conn',strategy='balanced')
         for i in range(5):
-            train_idx,test_idx = data.split_data(fold=i)
+            train_idx,test_idx = data.split_data(random=False,fold=i)
             assert len(set(ids[ids[f'fold_{i}'] == 1].index.to_list()).difference(set(test_idx))) == 0
             assert len(set(ids[ids[f'fold_{i}'] == 0].index.to_list()).difference(set(train_idx))) == 0
     
@@ -174,7 +178,7 @@ class TestData:
         gen_pheno(tmpdir)
         gen_cv_ids(tmpdir,name='task0')
         p_pheno = os.path.join(tmpdir,'pheno.csv')
-        data = balancedConfoundsDataset('task0',tmpdir,p_pheno)
+        data = caseControlDataset('task0',p_pheno,id_path=tmpdir,type='conf',strategy='balanced')
         assert data.name == 'task0'
     
     def test_balanced_confounds_split_data(self,tmpdir):
@@ -183,9 +187,9 @@ class TestData:
         gen_cv_ids(tmpdir,name='task0')
         ids = pd.read_csv(os.path.join(tmpdir,"task0.csv"),index_col=0)
         p_pheno = os.path.join(tmpdir,'pheno.csv')
-        data = balancedConfoundsDataset('task0',tmpdir,p_pheno)
+        data = caseControlDataset('task0',p_pheno,id_path=tmpdir,type='conf',strategy='balanced')
         for i in range(5):
-            train_idx,test_idx = data.split_data(fold=i)
+            train_idx,test_idx = data.split_data(random=False,fold=i)
             assert len(set(ids[ids[f'fold_{i}'] == 1].index.to_list()).difference(set(test_idx))) == 0
             assert len(set(ids[ids[f'fold_{i}'] == 0].index.to_list()).difference(set(train_idx))) == 0
     
@@ -196,16 +200,6 @@ class TestData:
         X, Y_dict = next(iter(trainloader))
         assert isinstance(X,torch.Tensor)
         assert isinstance(Y_dict,dict)
-
-    def test_split_data_two(self,tmpdir):
-        data = gen_case_con_dataset(tmpdir,n_cases=20)['task0']
-        train, test = split_data(data,splits=(0.8,0.2))
-        assert np.round(len(train)/(len(train) + len(test)),1) == 0.8
-
-    def test_split_data_three(self,tmpdir):
-        data = gen_case_con_dataset(tmpdir,n_cases=20)['task0']
-        train, test, val = split_data(data,splits=(0.8,0.1,0.1))
-        assert np.round(len(val)/(len(train) + len(test)+len(val)),1) == 0.1
 
 class TestModel:
     def test_init(self,tmpdir):
@@ -352,11 +346,11 @@ class TestTraining:
             trainloaders[k] = DataLoader(train_d, batch_size=16, shuffle=True)
         
         tasks = []
-        for X,Y_dict in get_batches(trainloaders,shuffle=True):
+        for X,Y_dict in get_batches(trainloaders,shuffle=True,seed=1):
             tasks.append(list(Y_dict.keys())[0])
         
         print(tasks)
-        assert tasks == ['task0', 'task1', 'task1', 'task0']
+        assert tasks == ['task1', 'task0', 'task1', 'task0']
 
     def test_get_batches_sequential(self,tmpdir):
         data = gen_case_con_dataset(tmpdir,n_cases=20)
