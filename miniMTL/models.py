@@ -284,3 +284,77 @@ class head3(nn.Module):
         #x = self.batch3(x)
         #x = self.dropout(self.leaky(self.fc4(x)))
         return x
+
+class encoder4(nn.Module):
+    """ Simple MLP for confounds 58 vec."""
+    def __init__(self):
+        super().__init__()
+        # in_channels, out_channels
+        self.fc1 = nn.Linear(58,32)
+        self.batch1 = nn.BatchNorm1d(32)
+        self.fc2 = nn.Linear(32,8)
+        self.batch2 = nn.BatchNorm1d(8)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc1(x)))
+        x = self.batch1(x)
+        x = self.dropout(self.leaky(self.fc2(x)))
+        x = self.batch2(x)
+        return x
+
+
+class head4(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc3 = nn.Linear(8,2)
+        #self.batch3 = nn.BatchNorm1d(8)
+        #self.fc4 = nn.Linear(8,2)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc3(x)))
+        #x = self.batch3(x)
+        #x = self.dropout(self.leaky(self.fc4(x)))
+        return x
+
+class encoder5(nn.Module):
+    """ Simple MLP for concat connectome 2080 + confound 58 vec."""
+    def __init__(self):
+        super().__init__()
+        # in_channels, out_channels
+        self.fc1 = nn.Linear(2138,256)
+        self.batch1 = nn.BatchNorm1d(256)
+        self.fc2 = nn.Linear(256, 16)
+        self.batch2 = nn.BatchNorm1d(16)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc1(x)))
+        x = self.batch1(x)
+        x = self.dropout(self.leaky(self.fc2(x)))
+        x = self.batch2(x)
+        return x
+
+
+class head5(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc3 = nn.Linear(16,2)
+        #self.batch3 = nn.BatchNorm1d(8)
+        #self.fc4 = nn.Linear(8,2)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc3(x)))
+        #x = self.batch3(x)
+        #x = self.dropout(self.leaky(self.fc4(x)))
+        return x
