@@ -2,7 +2,7 @@ import numpy as np
 from torch.utils.data import Subset
 from sklearn.model_selection import train_test_split
 
-def split_data(dataset,splits=(0.8,0.2),seed=0):
+def split_data(dataset,splits=(0.8,0.2),seed=None):
     assert np.sum(splits) == 1
     assert (len(splits)==2) | (len(splits)==3)
 

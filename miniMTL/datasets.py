@@ -23,7 +23,7 @@ def vec_to_connectome(a,dim=64):
     np.fill_diagonal(B,0)
     return A + B
 
-def strat_mask(pheno,case,control,stratify = 'SITE',seed=0):
+def strat_mask(pheno,case,control,stratify = 'SITE',seed=None):
     """ Get a mask for pheno with all the specified cases & controls matched
         for the `stratify` category.
     
@@ -39,7 +39,8 @@ def strat_mask(pheno,case,control,stratify = 'SITE',seed=0):
     -------
     bool array
     """
-    random.seed(seed)
+    if seed is not None:
+        random.seed(seed)
 
     # Get all the cases
     case_mask = pheno.index.isin(pheno[pheno[case]==1].index)
@@ -71,7 +72,6 @@ class caseControlDataset(Dataset):
         - `case` becomes the dataset name
             - must match task names used to define HPSModel
         - Labels are returned as a dictionary from dataset name to array of int
-        TODO: construct groups more carefully.
 
         Parameters
         ----------
@@ -100,7 +100,7 @@ class caseControlDataset(Dataset):
 
         pheno = pd.read_csv(pheno_path,index_col=0)
 
-        subject_mask = strat_mask(pheno,case,control,seed=seed)
+        subject_mask = strat_mask(pheno,case,control)
         
         self.idx = pheno[subject_mask].index
 
@@ -121,12 +121,13 @@ class caseControlDataset(Dataset):
             Dictionary from dataset name to labels (array of int).
         """
         sub_id = self.idx[idx]
-        conn = np.load(self.conn_path.format(sub_id))#[mask]
+        conn = np.load(self.conn_path.format(sub_id))
         mask = np.tri(64,dtype=bool)
 
         if self.format == 0:
             return conn[mask], {self.name:self.Y[idx]}
         elif self.format == 1:
+            # Make sure every subject gets shuffled the same way
             np.random.seed(self.seed)
             return conn[mask][np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
         else:
@@ -188,6 +189,7 @@ class balancedCaseControlDataset(Dataset):
         if self.format == 0:
             return conn[mask], {self.name:self.Y[idx]}
         elif self.format == 1:
+            # Make sure every subject gets shuffled the same way
             np.random.seed(self.seed)
             return conn[mask][np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
         elif self.format == 2:
