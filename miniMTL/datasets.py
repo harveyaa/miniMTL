@@ -6,23 +6,6 @@ import os
 import torch
 from torch.utils.data import Dataset
 
-def vec_to_connectome(a,dim=64):
-    """
-    Turn a vector representation of lower triangular matrix to connectome.
-    
-    a = vector
-    dim = dimension of connectome
-    
-    Returns:
-    dim x dim connectome
-    """
-    A = np.zeros((dim,dim))
-    mask = np.tri(dim,dtype=bool, k=0)
-    A[mask]=a
-    B = np.array(A).transpose()
-    np.fill_diagonal(B,0)
-    return A + B
-
 def strat_mask(pheno,case,control,stratify = 'SITE',seed=None):
     """ Get a mask for pheno with all the specified cases & controls matched
         for the `stratify` category.
@@ -133,6 +116,172 @@ class caseControlDataset(Dataset):
         else:
             return torch.unsqueeze(torch.from_numpy(conn),0), {self.name:self.Y[idx]}
 
+class confoundsDataset(Dataset):
+    def __init__(self,case,pheno_path):
+        """
+        Create a dataset of confounds for a given case/control group.
+        - Controls
+            - idiopathic conditions: uses all 'CON_IPC' as controls
+            - CNVs: uses 'non_carriers' from each PI
+        - `case` becomes the dataset name
+            - must match task names used to define HPSModel
+        - Labels are returned as a dictionary from dataset name to array of int
+
+        Parameters
+        ----------
+        case: str
+            Label of case to build dataset for (e.g. 'DEL22q11_2').
+        id_path: str
+            Path to direcotry containing .csv files with CV fold ids.
+        pheno_path: str
+            Path to phenotype .csv file.
+        """
+        self.name = case
+        pheno = pd.read_csv(pheno_path,index_col=0)
+
+        control = 'non_carriers'
+        if case in ['SZ','ADHD','BIP','ASD']:
+            control = 'CON_IPC'
+
+        # Select subjects
+        subject_mask = strat_mask(pheno,case,control)
+        self.idx = pheno[subject_mask].index
+        
+        # Get confounds
+        confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']
+        p = pd.get_dummies(pheno[confounds],['SEX','SITE'])
+        sex_cols = [c for c in p.columns if 'SEX' in c ]
+        site_cols = [c for c in p.columns if 'SITE' in c ]
+        cols = ['AGE','mean_conn', 'FD_scrubbed'] + sex_cols + site_cols
+
+        # Filter subjects
+        p = p[p.index.isin(self.idx)]
+
+        # Get confound matrix
+        self.X = p[cols]
+        self.dim = self.X.shape[1]
+
+        # Get labels
+        self.Y = pheno.loc[self.idx][case].values.astype(int)
+
+        del pheno
+        del p
+
+    def __len__(self):
+        return len(self.Y)
+        
+    def __getitem__(self,idx):
+        """
+        Returns
+        -------
+        X: array
+            Vector of confounds.
+        Y: dict[str:array]
+            Dictionary from dataset name to labels (array of int).
+        """
+
+        return self.X.iloc[idx].values, {self.name:self.Y[idx]}
+
+
+class concatDataset(Dataset):
+    def __init__(self,case,pheno_path,conn_path,format=1,seed=0):
+        """
+        Create a dataset of concatenated connectome (2080 vec) and confounds (58 vec)
+        for a given case/control group.
+        - Controls
+            - idiopathic conditions: uses all 'CON_IPC' as controls
+            - CNVs: uses 'non_carriers' from each PI
+        - `case` becomes the dataset name
+            - must match task names used to define HPSModel
+        - Labels are returned as a dictionary from dataset name to array of int
+
+        Parameters
+        ----------
+        case: str
+            Label of case to build dataset for (e.g. 'DEL22q11_2').
+        id_path: str
+            Path to direcotry containing .csv files with CV fold ids.
+        pheno_path: str
+            Path to phenotype .csv file.
+        conn_path: str
+            Path to directory containing connectomes (in square format).
+        format: int
+            0: vector of 2080 + 58
+            1: shuffled 2d array 40x52
+        seed: int
+            Seed to fix the random shuffle of the vector into 2d array.
+        """
+        assert format in [0,1]
+        self.format = format
+        self.seed = seed
+        self.name = case
+        self.conn_path = os.path.join(conn_path,'connectome_{}_cambridge64.npy')
+        pheno = pd.read_csv(pheno_path,index_col=0)
+
+        control = 'non_carriers'
+        if case in ['SZ','ADHD','BIP','ASD']:
+            control = 'CON_IPC'
+
+        # Select subjects
+        subject_mask = strat_mask(pheno,case,control)
+        self.idx = pheno[subject_mask].index
+        
+        # Get confounds
+        confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']
+        p = pd.get_dummies(pheno[confounds],['SEX','SITE'])
+        sex_cols = [c for c in p.columns if 'SEX' in c ]
+        site_cols = [c for c in p.columns if 'SITE' in c ]
+        cols = ['AGE','mean_conn', 'FD_scrubbed'] + sex_cols + site_cols
+
+        # Filter subjects
+        p = p[p.index.isin(self.idx)]
+
+        # Get confound matrix
+        self.X_conf = p[cols]
+
+        # Get labels
+        self.Y = pheno.loc[self.idx][case].values.astype(int)
+
+        del pheno
+        del p
+
+    def __len__(self):
+        return len(self.Y)
+        
+    def __getitem__(self,idx):
+        """
+        Returns
+        -------
+        X: array
+            Vector of confounds.
+        Y: dict[str:array]
+            Dictionary from dataset name to labels (array of int).
+        """
+
+        """
+        Returns
+        -------
+        X: array
+            Either a vector or randomly shuffled 2d array or connectome.
+        Y: dict[str:array]
+            Dictionary from dataset name to labels (array of int).
+        """
+        sub_id = self.idx[idx]
+        mask = np.tri(64,dtype=bool)
+
+        conn = np.load(self.conn_path.format(sub_id))
+        conf = self.X_conf.iloc[idx].values
+        concat = np.concatenate([conn[mask],conf])
+
+        if self.format == 0:
+            concat = np.concatenate([conn[mask],conf])
+            return concat, {self.name:self.Y[idx]}
+        elif self.format == 1:
+            concat = np.concatenate([conn[mask],conf])
+            # Make sure every subject gets shuffled the same way
+            np.random.seed(self.seed)
+            return np.pad(concat[np.random.permutation(2080+58)],2).reshape(42,51), {self.name:self.Y[idx]}
+
 
 class balancedCaseControlDataset(Dataset):
     def __init__(self,case,id_path,conn_path,format=1,seed=0):
@@ -233,24 +382,32 @@ class balancedConfoundsDataset(Dataset):
             Path to direcotry containing .csv files with CV fold ids.
         pheno_path: str
             Path to phenotype .csv file.
-        confounds: list of str
-            Which confounds to return.
         """
         self.name = case
+        pheno = pd.read_csv(pheno_path,index_col=0)
+
+        # Load subjects
         self.ids = pd.read_csv(os.path.join(id_path,f"{case}.csv"),index_col=0)
 
+        # Get confounds
         confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']
-        pheno = pd.read_csv(pheno_path,index_col=0)
         p = pd.get_dummies(pheno[confounds],['SEX','SITE'])
         sex_cols = [c for c in p.columns if 'SEX' in c ]
         site_cols = [c for c in p.columns if 'SITE' in c ]
         cols = ['AGE','mean_conn', 'FD_scrubbed'] + sex_cols + site_cols
+
+        # Filter subjects
+        p = p[p.index.isin(self.ids.index)]
+
+        # Get confound matrix
         self.X = p[cols]
         self.dim = self.X.shape[1]
+
+        # Get labels
+        self.Y = self.ids[case].values.astype(int)
+
         del pheno
         del p
-
-        self.Y = self.ids[case].values.astype(int)
 
     def __len__(self):
         return len(self.Y)
