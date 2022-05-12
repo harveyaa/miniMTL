@@ -52,34 +52,19 @@ if __name__ == "__main__":
         data.append(caseControlDataset(case,p_pheno,ids_path=p_ids,conn_path=p_conn,type='conn',strategy='balanced',format=args.data_format))
     print('Done!\n')
     
-    if args.rand_test:
-        # Split data & create loaders & loss fns
-        loss_fns = {}
-        trainloaders = {}
-        testloaders = {}
-        decoders = {}
-        for d, case in zip(data,cases):
-            train_d, test_d = split_data(d)
-
-            trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
-            testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
-            loss_fns[case] = nn.CrossEntropyLoss()
-            decoders[case] = eval(f'head{args.head}().double()')
-    else:
-        # Split data & create loaders & loss fns
-        loss_fns = {}
-        trainloaders = {}
-        testloaders = {}
-        decoders = {}
-        for d, case in zip(data,cases):
-            train_idx, test_idx = d.split_data(args.fold)
-            train_d = Subset(d,train_idx)
-            test_d = Subset(d,test_idx)
-
-            trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
-            testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
-            loss_fns[case] = nn.CrossEntropyLoss()
-            decoders[case] = eval(f'head{args.head}().double()')
+    # Split data & create loaders & loss fns
+    loss_fns = {}
+    trainloaders = {}
+    testloaders = {}
+    decoders = {}
+    for d, case in zip(data,cases):
+        train_idx, test_idx = d.split_data(random=args.rand_test,fold=args.fold)
+        train_d = Subset(d,train_idx)
+        test_d = Subset(d,test_idx)
+        trainloaders[case] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
+        testloaders[case] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
+        loss_fns[case] = nn.CrossEntropyLoss()
+        decoders[case] = eval(f'head{args.head}().double()')
     
     # Create model
     model = HPSModel(eval(f'encoder{args.encoder}().double()'),
