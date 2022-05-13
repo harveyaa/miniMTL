@@ -115,7 +115,7 @@ def get_concat(conf,sub_id,conn_path,format):
     concat = np.concatenate([conn[mask],conf])
 
     if format == 0:
-        return conn[mask]
+        return concat
     elif format == 1:
         np.random.seed(SEED)
         return np.pad(concat[np.random.permutation(2080+58)],2).reshape(42,51)
