@@ -14,8 +14,10 @@ from argparse import ArgumentParser
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--tasks",help="tasks",dest='tasks',nargs='*')
-    parser.add_argument("--encoder",help="Which encoder to use.",dest='encoder',default=0,type=int)
-    parser.add_argument("--head",help="Which head to use.",dest='head',default=0,type=int)
+    parser.add_argument("--type",help="which data type, 'conn', 'conf' or 'concat'.",default='concat')
+    parser.add_argument("--strategy",help="which strategy, 'stratified' or 'blanced'.",default='balanced')
+    parser.add_argument("--encoder",help="Which encoder to use.",dest='encoder',default=5,type=int)
+    parser.add_argument("--head",help="Which head to use.",dest='head',default=5,type=int)
     parser.add_argument("--id_dir",help="path to data ods",dest='id_dir',
                         default='/home/harveyaa/Documents/masters/MTL/conf_balancing/hybrid/')
     parser.add_argument("--data_dir",help="path to data dir",dest='data_dir',
@@ -49,7 +51,8 @@ if __name__ == "__main__":
     data = []
     for case in cases:
         print(case)
-        data.append(caseControlDataset(case,p_pheno,ids_path=p_ids,conn_path=p_conn,type='conn',strategy='balanced',format=args.data_format))
+        data.append(caseControlDataset(case,p_pheno,ids_path=p_ids,conn_path=p_conn,
+                                        type=args.type,strategy=args.strategy,format=args.data_format))
     print('Done!\n')
     
     # Split data & create loaders & loss fns
