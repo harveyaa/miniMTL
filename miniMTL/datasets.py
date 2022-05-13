@@ -163,6 +163,8 @@ class caseControlDataset(Dataset):
 
         # Select subjects
         if self.strategy == 'balanced':
+            if id_path is None:
+                raise ValueError("Must specify id_path for 'balanced' strategy.")
             self.ids = pd.read_csv(os.path.join(id_path,f"{case}.csv"),index_col=0)
             self.idx = self.ids.index
         elif self.strategy == 'stratified':
