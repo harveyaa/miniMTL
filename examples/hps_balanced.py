@@ -51,7 +51,7 @@ if __name__ == "__main__":
     data = []
     for case in cases:
         print(case)
-        data.append(caseControlDataset(case,p_pheno,ids_path=p_ids,conn_path=p_conn,
+        data.append(caseControlDataset(case,p_pheno,id_path=p_ids,conn_path=p_conn,
                                         type=args.type,strategy=args.strategy,format=args.data_format))
     print('Done!\n')
     
