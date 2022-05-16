@@ -117,8 +117,11 @@ def get_concat(conf,sub_id,conn_path,format):
     if format == 0:
         return concat
     elif format == 1:
-        np.random.seed(SEED)
-        return np.pad(concat[np.random.permutation(2080+58)],2).reshape(42,51)
+        if conf.shape[0] == 58:
+            np.random.seed(SEED)
+            return np.pad(concat[np.random.permutation(2080+58)],2).reshape(42,51)
+        else:
+            raise ValueError('Concatenated conn + conf_no_site format (int encoded) must be in 0.')
     else:
         raise ValueError('Concatenated conn + conf format (int encoded) must be in [0,1].')
 
@@ -140,6 +143,8 @@ class caseControlDataset(Dataset):
             - conf: one-hot encoded confounds (['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']) (58)
             - conn: connectome (2080)
             - concat: concatenated conf + conn (2080 + 58)
+            - conf_no_site: one-hot encoded confounds (['AGE','SEX','mean_conn', 'FD_scrubbed']) (5)
+            - concat_no_site: concatenated conf_no_site + conn (2080 + 5)
     strategy: str, default='balanced'
         Which type of dataset to use, must be in ['balanced','stratified']
             - balanced: fixed datasets & CV splits generated to have balanced test sets.
@@ -151,7 +156,7 @@ class caseControlDataset(Dataset):
             - 2: full connectome (N/A, N/A, 64x64)
     """
     def __init__(self,case,pheno_path,id_path=None,conn_path=None,type='concat',strategy='balanced',format=0):
-        assert type in ['concat','conn','conf']
+        assert type in ['concat','conn','conf','conf_no_site','concat_no_site']
         assert strategy in ['balanced','stratified']
         self.name = case
         self.type = type
@@ -172,10 +177,14 @@ class caseControlDataset(Dataset):
             subject_mask = strat_mask(pheno,case,control)
             self.idx = pheno[subject_mask].index
         
-        # Get confounds if needed
+        # Get confounds if needed (w/ SITE)
         if self.type != 'conn':
-            confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']
-            p = pd.get_dummies(pheno[confounds],['SEX','SITE'])
+            if self.type in ['conf','concat']:
+                confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']
+                p = pd.get_dummies(pheno[confounds],['SEX','SITE'])
+            elif self.type in ['conf_no_site','concat_no_site']:
+                confounds = ['AGE','SEX','mean_conn', 'FD_scrubbed']
+                p = pd.get_dummies(pheno[confounds],['SEX'])
             cols = ['AGE','mean_conn', 'FD_scrubbed'] + [c for c in p.columns if 'SEX' in c ] + [c for c in p.columns if 'SITE' in c ]
             p = p[p.index.isin(self.idx)]
             self.X_conf = p[cols]
@@ -196,11 +205,11 @@ class caseControlDataset(Dataset):
         if self.type == 'conn':
             conn = get_connectome(self.idx[idx], self.conn_path,self.format)
             return conn, {self.name:self.Y[idx]}
-        elif self.type == 'conf':
+        elif (self.type == 'conf') | (self.type == 'conf_no_site'):
             if self.format != 0:
                 raise Warning('Confound format can only be 0 (vector).')
             return self.X_conf.iloc[idx].values, {self.name:self.Y[idx]}
-        elif self.type == 'concat':
+        elif (self.type == 'concat') | (self.type == 'concat_no_site'):
             concat = get_concat(self.X_conf.iloc[idx],self.idx[idx], self.conn_path,self.format)
             return concat, {self.name:self.Y[idx]}
     
