@@ -19,7 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--encoder",help="Which encoder to use.",dest='encoder',default=5,type=int)
     parser.add_argument("--head",help="Which head to use.",dest='head',default=5,type=int)
     parser.add_argument("--id_dir",help="path to data ods",dest='id_dir',
-                        default='/home/harveyaa/Documents/masters/MTL/conf_balancing/hybrid/')
+                        default='/home/harveyaa/Documents/masters/neuropsych_mtl/datasets/cv_folds/hybrid/')
     parser.add_argument("--data_dir",help="path to data dir",dest='data_dir',
                         default='/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/')
     parser.add_argument("--data_format",help="data format code",dest='data_format',default=1,type=int)
