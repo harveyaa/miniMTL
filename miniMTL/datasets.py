@@ -186,7 +186,7 @@ class caseControlDataset(Dataset):
                 confounds = ['AGE','SEX','mean_conn', 'FD_scrubbed']
                 p = pd.get_dummies(pheno[confounds],['SEX'])
             cols = ['AGE','mean_conn', 'FD_scrubbed'] + [c for c in p.columns if 'SEX' in c ] + [c for c in p.columns if 'SITE' in c ]
-            p = p[p.index.isin(self.idx)]
+            p = p.loc[self.idx]
             self.X_conf = p[cols]
 
             # Cleanup
