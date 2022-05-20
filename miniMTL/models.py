@@ -329,8 +329,8 @@ class encoder5(nn.Module):
         # in_channels, out_channels
         self.fc1 = nn.Linear(2138,256)
         self.batch1 = nn.BatchNorm1d(256)
-        self.fc2 = nn.Linear(256, 16)
-        self.batch2 = nn.BatchNorm1d(16)
+        self.fc2 = nn.Linear(256, 64)
+        self.batch2 = nn.BatchNorm1d(64)
 
         self.dropout = nn.Dropout()
         self.leaky = nn.LeakyReLU()
@@ -346,7 +346,7 @@ class encoder5(nn.Module):
 class head5(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc3 = nn.Linear(16,2)
+        self.fc3 = nn.Linear(64,2)
         #self.batch3 = nn.BatchNorm1d(8)
         #self.fc4 = nn.Linear(8,2)
 
