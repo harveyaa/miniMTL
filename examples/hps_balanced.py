@@ -7,7 +7,6 @@ from miniMTL.datasets import caseControlDataset
 from miniMTL.models import *
 from miniMTL.training import Trainer
 from miniMTL.hps import HPSModel
-from miniMTL.util import split_data
 
 from argparse import ArgumentParser
 
