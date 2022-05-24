@@ -49,6 +49,29 @@ def strat_mask(pheno,case,control,stratify = 'SITE',seed=None):
         
     return case_mask + control_mask
 
+def get_conf_mat(pheno,confounds):
+    """ Reduce pheno to only confounds & onehot encode categorical columns.
+
+    Parameters
+    ----------
+    pheno: DataFrame
+        Phenotype DataFrame.
+    confounds: list of str
+        List of confounds to select.
+    
+    Returns:
+    --------
+    DataFrame
+        Input DataFrame reduced to relevent (onehot encoded) columns.
+    """
+    categorical = [c for c in confounds if c in ['SEX','SITE']]
+    p = pd.get_dummies(pheno[confounds],categorical)
+    cols = confounds.copy()
+    for cat in categorical:
+        cols.remove(cat)
+        cols += [c for c in p.columns if cat in c]
+    return p[cols]
+
 def get_connectome(sub_id,conn_path,format):
     """ Load & format connectome for given sub_id. 
     See caseControlDataset class for format description.
@@ -181,13 +204,10 @@ class caseControlDataset(Dataset):
         if self.type != 'conn':
             if self.type in ['conf','concat']:
                 confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']
-                p = pd.get_dummies(pheno[confounds],['SEX','SITE'])
             elif self.type in ['conf_no_site','concat_no_site']:
                 confounds = ['AGE','SEX','mean_conn', 'FD_scrubbed']
-                p = pd.get_dummies(pheno[confounds],['SEX'])
-            cols = ['AGE','mean_conn', 'FD_scrubbed'] + [c for c in p.columns if 'SEX' in c ] + [c for c in p.columns if 'SITE' in c ]
-            p = p.loc[self.idx]
-            self.X_conf = p[cols]
+            p = get_conf_mat(pheno,confounds)
+            self.X_conf = p.loc[self.idx]
 
             # Cleanup
             del p
@@ -246,31 +266,106 @@ class caseControlDataset(Dataset):
                                                     random_state=seed)
         return train_idx, test_idx
 
-class ukbbSexDataset(Dataset):
-    def __init__(self,pheno_path,conn_path,dim=2,seed=0):
-        assert ((dim == 1)|(dim == 2))
-        self.dim = dim
-        self.seed = seed
-        self.name = 'ukbb_sex'
+class confDataset(Dataset):
+    """ Generate a case control dataset for the given case according to the desired parameters.
 
-        conn_path = os.path.join(conn_path,'connectome_{}_cambridge64.npy')
+    Parameters
+    ----------
+    study: str
+        Study label.
+    pheno_path: str
+        Path to pheno .csv file.
+    conf: str, default='SEX'
+        Which confound to predict as a label, can be in ['SEX','AGE','FD_scrubbed']
+    conn_path: str, default=None
+        Path to connectome dir (needed for 'conn' or 'concat' type).
+    type: str, default='conn'
+        Which type of data to use, must be in ['conf','conn','concat']:
+            - conf: one-hot encoded confounds (['AGE','SITE','mean_conn', 'FD_scrubbed']) (56)
+            - conn: connectome (2080)
+            - concat: concatenated conf + conn (2080 + 56)
+    format: int, default=0
+        Which format to return the data in (must be in [0,1,2] depending on type):
+            - 0: vector (58, 2080, 2080 + 58)
+            - 1: random shuffle of vector into array (N/A, 40x52, 42x51)
+            - 2: full connectome (N/A, N/A, 64x64)
+    n_subsamp: int, default=None
+        How many subjects to select in subsample (should only be relevant for UKBB).
+    controls_only: bool, default=True
+        Wether or not to limit selection to controls.
+    confounds: list of str, default=['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']
+        Which confounds to use as predictors (for type 'conf' or 'concat'). Note 'conf' (target variable)
+        will always be removed even if it included in 'confounds'.
+    """
+    def __init__(self,study,pheno_path,conf='SEX',conn_path=None,type='conn',format=0,n_subsamp=None,controls_only=True,
+                confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']):
+        assert conf in ['SEX','AGE','FD_scrubbed']
+        assert type in ['concat','conn','conf']
+        assert study in ['ds000030', 'Cardiff', 'UKBB', 'BC', 'UCLA', 'SFARI', 'ABIDE','Orban', 'ADHD200', 'ABIDE2']
+        self.name = study
+        self.type = type
+        self.format = format
+        if conn_path:
+            self.conn_path = os.path.join(conn_path,'connectome_{}_cambridge64.npy')
         pheno = pd.read_csv(pheno_path,index_col=0)
 
-        idx = pheno[(pheno['PI']=='UKBB') & (pheno['non_carriers']==1)].index
-        mask = np.tri(64,dtype=bool)
+        # Select subjects
+        if controls_only:
+            self.idx = pheno[(pheno['PI']==study) & ((pheno['CON_IPC']==1)|(pheno['non_carriers']==1))].index
+        else:
+            self.idx = pheno[(pheno['PI']==study)].index
+        if not n_subsamp is None:
+            self.idx = np.random.choice(self.idx,size=n_subsamp,replace=False)
+        
+        # Get confounds if needed
+        if self.type != 'conn':
+            confounds.remove(conf)
+            p = get_conf_mat(pheno,confounds)
+            self.X_conf = p.loc[self.idx]
 
-        self.X = np.array([np.load(conn_path.format(sub_id))[mask] for sub_id in idx])
-        self.Y = pheno.loc[idx]['SEX'].map({'Female':0,'Male':1}).values
+            # Cleanup
+            del p
+        
+        # Get response var
+        if (conf == 'AGE') | (conf == 'FD_scrubbed'):
+            self.Y = torch.from_numpy(pheno.loc[self.idx][conf].values).type(torch.double).unsqueeze(dim=1)
+        elif conf == 'SEX':
+            self.Y = pheno.loc[self.idx]['SEX'].map({'Female':1,'Male':0}).values.astype(int)
 
+        # Cleanup
         del pheno
 
     def __len__(self):
         return len(self.Y)
         
     def __getitem__(self,idx):
-        vec = self.X[idx,:]
-        if self.dim == 1:
-            return vec, {self.name:self.Y[idx]}
-        else:
-            np.random.seed(self.seed)
-            return vec[np.random.permutation(2080)].reshape(40,52), {self.name:self.Y[idx]}
+        if self.type == 'conn':
+            conn = get_connectome(self.idx[idx], self.conn_path,self.format)
+            return conn, {self.name:self.Y[idx]}
+        elif self.type == 'conf':
+            if self.format != 0:
+                raise Warning('Confound format can only be 0 (vector).')
+            return self.X_conf.iloc[idx].values, {self.name:self.Y[idx]}
+        elif self.type == 'concat':
+            concat = get_concat(self.X_conf.iloc[idx],self.idx[idx], self.conn_path,self.format)
+            return concat, {self.name:self.Y[idx]}
+    
+    def split_data(self,splits=(0.8,0.2),seed=None):
+        """ Split dataset into train & test sets.
+
+        Parameters
+        ----------
+        splits: tuple, default=(0.8,0.2)
+            Proportion of training & test data respectively.
+        seed: int, default=None
+            Fix the random state.
+
+        Returns
+        -------
+        train_idx, test_idx
+        """
+        train_idx, test_idx, _, _ = train_test_split(range(len(self.idx)),
+                                                    self.Y,
+                                                    test_size=splits[1],
+                                                    random_state=seed)
+        return train_idx, test_idx
