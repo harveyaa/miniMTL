@@ -38,7 +38,6 @@ if __name__ == "__main__":
 
     # Define paths to data
     p_pheno = os.path.join(args.data_dir,'pheno_01-12-21.csv')
-    p_ids = args.id_dir
     p_conn = os.path.join(args.data_dir,'connectomes')
 
     # Create datasets
