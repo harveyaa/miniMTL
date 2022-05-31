@@ -75,10 +75,10 @@ if __name__ == "__main__":
     
     # Create optimizer & trainer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    trainer = Trainer(optimizer,num_epochs=args.num_epochs,log_dir=args.log_dir)
+    trainer = Trainer(optimizer,log_dir=args.log_dir)
 
     # Train model
-    trainer.fit(model,trainloaders,testloaders)
+    trainer.fit(model,trainloaders,testloaders,num_epochs=args.num_epochs)
 
     # Evaluate at end
     metrics = model.score(testloaders)
