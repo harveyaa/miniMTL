@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser.add_argument("--tasks",help="tasks",dest='tasks',nargs='*')
     parser.add_argument("--conf",help="which confound to predict, 'SEX', 'AGE' or 'FD_scrubbed'.",default='SEX')
     parser.add_argument("--type",help="which data type, 'conn', 'conf' or 'concat'.",default='concat')
-    parser.add_argument("--n_subsample",help="how many subjects to subsample",default=1000,type=int)
+    parser.add_argument("--n_subsamp",help="how many subjects to subsample",default=1000,type=int)
     parser.add_argument("--encoder",help="Which encoder to use.",dest='encoder',default=3,type=int)
     parser.add_argument("--head",help="Which head to use.",dest='head',default=3,type=int)
     parser.add_argument("--data_dir",help="path to data dir",dest='data_dir',
@@ -38,7 +38,6 @@ if __name__ == "__main__":
 
     # Define paths to data
     p_pheno = os.path.join(args.data_dir,'pheno_01-12-21.csv')
-    p_ids = args.id_dir
     p_conn = os.path.join(args.data_dir,'connectomes')
 
     # Create datasets
@@ -59,7 +58,7 @@ if __name__ == "__main__":
     testloaders = {}
     decoders = {}
     for d, study in zip(data,studies):
-        train_idx, test_idx = d.split_data(random=args.rand_test,fold=args.fold)
+        train_idx, test_idx = d.split_data()
         train_d = Subset(d,train_idx)
         test_d = Subset(d,test_idx)
         trainloaders[study] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
