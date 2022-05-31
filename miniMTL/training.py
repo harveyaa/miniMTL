@@ -40,7 +40,7 @@ def get_batches(dataloaders, shuffle=True,seed=None):
 
 
 class Trainer:
-    def __init__(self,optimizer,lr_scheduler=None,num_epochs=100,clip_grad=True,max_grad=1,log_dir=None):
+    def __init__(self,optimizer,lr_scheduler=None,clip_grad=True,max_grad=1,log_dir=None):
         """
         Parameters
         ----------
@@ -59,13 +59,12 @@ class Trainer:
         """
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
-        self.num_epochs = num_epochs
         self.clip_grad = clip_grad
         self.max_grad = max_grad
         self.writer = SummaryWriter(log_dir=log_dir)
         self.logger = Logger(log_dir=log_dir)
 
-    def fit(self,model,dataloaders,test_dataloaders, shuffle=True):
+    def fit(self,model,dataloaders,test_dataloaders,num_epochs=100,shuffle=True):
         """
         Trains the passed model according to the hyperparameters passed to the Trainer.
 
@@ -74,7 +73,11 @@ class Trainer:
         model: HPSModel
             Hard Parameter Sharing model.
         dataloaders: dict[str,DataLoader]
-            Dictionary from task name to DataLoader.
+            Dictionary from task name to training DataLoader.
+        test_dataloaders: dict[str,DataLoader]
+            Dictionary from task name to test DataLoader.
+        num_epochs: int, default=100
+            Number of epochs to train for.
         """
         # Calculate the total number of batches per epoch
         tasks = list(dataloaders.keys())
@@ -83,7 +86,7 @@ class Trainer:
         # Set to training mode
         model.train()
 
-        for epoch_num in range(self.num_epochs):
+        for epoch_num in range(num_epochs):
             batches = tqdm(enumerate(get_batches(dataloaders,shuffle=shuffle)),
                             total=n_batches_per_epoch,
                             desc=f"Epoch {epoch_num}")
