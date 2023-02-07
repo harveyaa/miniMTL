@@ -20,7 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("--id_dir",help="path to data ods",dest='id_dir',
                         default='/home/harveyaa/Documents/masters/neuropsych_mtl/datasets/cv_folds/hybrid/')
     parser.add_argument("--data_dir",help="path to data dir",dest='data_dir',
-                        default='/home/harveyaa/Documents/fMRI/data/ukbb_9cohorts/')
+                        default='/home/harveyaa/Documents/masters/data/')
     parser.add_argument("--data_format",help="data format code",dest='data_format',default=1,type=int)
     parser.add_argument("--log_dir",help="path to log_dir",dest='log_dir',default=None)
     parser.add_argument("--batch_size",help="batch size for training/test loaders",default=16,type=int)
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     print('#############\n')
 
     # Define paths to data
-    p_pheno = os.path.join(args.data_dir,'pheno_01-12-21.csv')
+    p_pheno = os.path.join(args.data_dir,'pheno_26-01-22.csv')
     p_ids = args.id_dir
     p_conn = os.path.join(args.data_dir,'connectomes')
 
