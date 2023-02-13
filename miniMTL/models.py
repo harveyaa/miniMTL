@@ -55,20 +55,20 @@ class encoder0(nn.Module):
 class head0(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc3 = nn.Linear(64,64)
-        self.batch3 = nn.BatchNorm1d(64)
-        self.fc4 = nn.Linear(64,64)
-        self.batch4 = nn.BatchNorm1d(64)
+        #self.fc3 = nn.Linear(64,64)
+        #self.batch3 = nn.BatchNorm1d(64)
+        #self.fc4 = nn.Linear(64,64)
+        #self.batch4 = nn.BatchNorm1d(64)
         self.fc5 = nn.Linear(64,2)
 
         self.dropout = nn.Dropout()
         self.softmax = nn.Softmax(dim=1)
     
     def forward(self,x):
-        x = self.dropout(F.relu(self.fc3(x)))
-        x = self.batch3(x)
-        x = self.dropout(F.relu(self.fc4(x)))
-        x = self.batch4(x)
+        #x = self.dropout(F.relu(self.fc3(x)))
+        #x = self.batch3(x)
+        #x = self.dropout(F.relu(self.fc4(x)))
+        #x = self.batch4(x)
         x = self.softmax(self.fc5(x))
         return x
 
