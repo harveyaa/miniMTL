@@ -70,7 +70,7 @@ class head0(nn.Module):
         #x = self.dropout(F.relu(self.fc4(x)))
         #x = self.batch4(x)
         #x = self.softmax(self.fc5(x))
-        x - self.fc5(x)
+        x = self.fc5(x)
         return x
 
 
