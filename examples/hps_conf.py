@@ -42,14 +42,14 @@ if __name__ == "__main__":
 
     # Create datasets
     print('Creating datasets...')
-    studies = args.tasks
+    sites = args.tasks
     data = []
-    for study in studies:
-        print(study)
-        if study == 'UKBB':
-            data.append(confDataset(study,p_pheno,conf=args.conf,conn_path=p_conn,n_subsamp=args.n_subsamp,type=args.type))
+    for site in sites:
+        print(site)
+        if site[:4] == 'UKBB':
+            data.append(confDataset(site,p_pheno,conf=args.conf,conn_path=p_conn,n_subsamp=args.n_subsamp,type=args.type))
         else:
-            data.append(confDataset(study,p_pheno,conf=args.conf,conn_path=p_conn,type=args.type))
+            data.append(confDataset(site,p_pheno,conf=args.conf,conn_path=p_conn,type=args.type))
     print('Done!\n')
     
     # Split data & create loaders & loss fns
@@ -57,20 +57,20 @@ if __name__ == "__main__":
     trainloaders = {}
     testloaders = {}
     decoders = {}
-    for d, study in zip(data,studies):
+    for d, site in zip(data,sites):
         train_idx, test_idx = d.split_data()
         train_d = Subset(d,train_idx)
         test_d = Subset(d,test_idx)
-        trainloaders[study] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
-        testloaders[study] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
+        trainloaders[site] = DataLoader(train_d, batch_size=args.batch_size, shuffle=True)
+        testloaders[site] = DataLoader(test_d, batch_size=args.batch_size, shuffle=True)
 
         # Regression vs classification loss
         if args.conf in ['FD_scrubbed','AGE']:
-            loss_fns[study] = nn.MSELoss()
+            loss_fns[site] = nn.MSELoss()
         else:
-            loss_fns[study] = nn.CrossEntropyLoss()
+            loss_fns[site] = nn.CrossEntropyLoss()
 
-        decoders[study] = eval(f'head{args.head}().double()')
+        decoders[site] = eval(f'head{args.head}().double()')
     
     # Create model
     model = HPSModel(eval(f'encoder{args.encoder}().double()'),
