@@ -267,12 +267,12 @@ class caseControlDataset(Dataset):
         return train_idx, test_idx
 
 class confDataset(Dataset):
-    """ Generate a case control dataset for the given case according to the desired parameters.
+    """ Generate a confound dataset for the given site using control only according to the desired parameters.
 
     Parameters
     ----------
-    study: str
-        Study label.
+    site: str
+        Site label.
     pheno_path: str
         Path to pheno .csv file.
     conf: str, default='SEX'
@@ -291,18 +291,18 @@ class confDataset(Dataset):
             - 2: full connectome (N/A, N/A, 64x64)
     n_subsamp: int, default=None
         How many subjects to select in subsample (should only be relevant for UKBB).
-    controls_only: bool, default=True
-        Wether or not to limit selection to controls.
     confounds: list of str, default=['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']
         Which confounds to use as predictors (for type 'conf' or 'concat'). Note 'conf' (target variable)
         will always be removed even if it included in 'confounds'.
     """
-    def __init__(self,study,pheno_path,conf='SEX',conn_path=None,type='conn',format=0,n_subsamp=None,controls_only=True,
+    def __init__(self,site,pheno_path,conf='SEX',conn_path=None,type='conn',format=0,n_subsamp=None,controls_only=True,
                 confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']):
         assert conf in ['SEX','AGE','FD_scrubbed']
         assert type in ['concat','conn','conf']
-        assert study in ['ds000030', 'Cardiff', 'UKBB', 'BC', 'UCLA', 'SFARI', 'ABIDE','Orban', 'ADHD200', 'ABIDE2']
-        self.name = study
+        # Sites with at least 30 controls
+        assert site in ['ADHD1','ADHD3','ADHD5','ADHD6','HSJ','NYU','SZ1','SZ2','SZ3','SZ6','Svip1',
+                        'Svip2','UCLA_CB','UCLA_DS1','UKBB11025','UKBB11026','UKBB11027','USM']
+        self.name = site
         self.type = type
         self.format = format
         if conn_path:
@@ -311,9 +311,9 @@ class confDataset(Dataset):
 
         # Select subjects
         if controls_only:
-            self.idx = pheno[(pheno['PI']==study) & ((pheno['CON_IPC']==1)|(pheno['non_carriers']==1))].index
+            self.idx = pheno[(pheno['SITE']==site) & ((pheno['CON_IPC']==1)|(pheno['non_carriers']==1))].index
         else:
-            self.idx = pheno[(pheno['PI']==study)].index
+            self.idx = pheno[(pheno['SITE']==site)].index
         if not n_subsamp is None:
             self.idx = np.random.choice(self.idx,size=n_subsamp,replace=False)
         
