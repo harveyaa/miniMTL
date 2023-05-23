@@ -277,6 +277,8 @@ class confDataset(Dataset):
         Path to pheno .csv file.
     conf: str, default='SEX'
         Which confound to predict as a label, can be in ['SEX','AGE','FD_scrubbed']
+    id_path: str, default=None
+        Path to CV fold .csv file.
     conn_path: str, default=None
         Path to connectome dir (needed for 'conn' or 'concat' type).
     type: str, default='conn'
@@ -295,7 +297,7 @@ class confDataset(Dataset):
         Which confounds to use as predictors (for type 'conf' or 'concat'). Note 'conf' (target variable)
         will always be removed even if it included in 'confounds'.
     """
-    def __init__(self,site,pheno_path,conf='SEX',conn_path=None,type='conn',format=0,n_subsamp=None,controls_only=True,
+    def __init__(self,site,pheno_path,conf='SEX',id_path=None,conn_path=None,type='conn',format=0,n_subsamp=50,controls_only=True,
                 confounds = ['AGE','SEX','SITE','mean_conn', 'FD_scrubbed']):
         assert conf in ['SEX','AGE','FD_scrubbed']
         assert type in ['concat','conn','conf']
@@ -311,11 +313,18 @@ class confDataset(Dataset):
 
         # Select subjects
         if controls_only:
-            self.idx = pheno[(pheno['SITE']==site) & ((pheno['CON_IPC']==1)|(pheno['non_carriers']==1))].index
+            if id_path is not None:
+                # get IDS from .csv index
+                if site[:4] != 'UKBB':
+                    self.ids = pd.read_csv(os.path.join(id_path,f"{site}.csv"),index_col=0)
+                else:
+                    self.ids = pd.read_csv(os.path.join(id_path,f"{site}_{n_subsamp}.csv"),index_col=0)
+                    
+                self.idx = self.ids.index
+            else:
+                self.idx = pheno[(pheno['SITE']==site) & ((pheno['CON_IPC']==1)|(pheno['non_carriers']==1))].index
         else:
             self.idx = pheno[(pheno['SITE']==site)].index
-        if not n_subsamp is None:
-            self.idx = np.random.choice(self.idx,size=n_subsamp,replace=False)
         
         # Get confounds if needed
         if self.type != 'conn':
@@ -350,22 +359,32 @@ class confDataset(Dataset):
             concat = get_concat(self.X_conf.iloc[idx],self.idx[idx], self.conn_path,self.format)
             return concat, {self.name:self.Y[idx]}
     
-    def split_data(self,splits=(0.8,0.2),seed=None):
+    def split_data(self,random=True,fold=0,splits=(0.8,0.2),seed=None):
         """ Split dataset into train & test sets.
 
         Parameters
         ----------
+        random: bool, default=True
+            Wether to use random splits, otherwise use premade non-overlapping CV folds.
+        fold: int, default=0
+            If using premade CV folds, which fold to use.
         splits: tuple, default=(0.8,0.2)
-            Proportion of training & test data respectively.
+            If using random splits, proportion of training & test data respectively.
         seed: int, default=None
-            Fix the random state.
+            If using random splits, fix the random state.
 
         Returns
         -------
         train_idx, test_idx
         """
-        train_idx, test_idx, _, _ = train_test_split(range(len(self.idx)),
+        if not random:
+            rr = np.array(range(len(self.idx)))
+            train_idx = rr[self.ids[f"fold_{fold}"] == 0]
+            test_idx = rr[self.ids[f"fold_{fold}"] == 1]
+        else:
+            train_idx, test_idx, _, _ = train_test_split(range(len(self.idx)),
                                                     self.Y,
+                                                    stratify=self.Y,
                                                     test_size=splits[1],
                                                     random_state=seed)
         return train_idx, test_idx
