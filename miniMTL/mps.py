@@ -32,7 +32,7 @@ class MPSModel(nn.Module):
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.to(self.device)
-        print(f'Initialized HPSModel using: {self.device}.\n')
+        print(f'Initialized MPSModel using: {self.device}.\n')
     
     def forward(self,X,task_names):
         """
