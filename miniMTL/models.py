@@ -432,7 +432,7 @@ class head8(nn.Module):
     
 # MODIFIED BASIC MODEL FOR MPS
 # Split encoder3 into preencoder & encoder
-class preencoder3(nn.Module):
+class preencoder33(nn.Module):
     """ Simple MLP for connectome 2080 vec."""
     def __init__(self):
         super().__init__()
@@ -468,6 +468,43 @@ class encoder33(nn.Module):
     def forward(self,x):
         #x = self.dropout(self.leaky(self.fc1(x)))
         #x = self.batch1(x)
+        x = self.dropout(self.leaky(self.fc2(x)))
+        x = self.batch2(x)
+        return x
+    
+# add a pre layer keeping two layers in encoder
+class preencoder333(nn.Module):
+    """ Simple MLP for connectome 2080 vec."""
+    def __init__(self):
+        super().__init__()
+        # in_channels, out_channels
+        self.fc1 = nn.Linear(2080,256)
+        self.batch1 = nn.BatchNorm1d(256)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc1(x)))
+        x = self.batch1(x)
+        return x
+    
+class encoder333(nn.Module):
+    """ Simple MLP for connectome 2080 vec."""
+    def __init__(self):
+        super().__init__()
+        # in_channels, out_channels
+        self.fc1 = nn.Linear(256,256)
+        self.batch1 = nn.BatchNorm1d(256)
+        self.fc2 = nn.Linear(256, 64)
+        self.batch2 = nn.BatchNorm1d(64)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc1(x)))
+        x = self.batch1(x)
         x = self.dropout(self.leaky(self.fc2(x)))
         x = self.batch2(x)
         return x
