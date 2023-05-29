@@ -25,10 +25,10 @@ class MPSModel(nn.Module):
         # Register all the modules to make sure the parameters are tracked properly
         # If don't do this explicitly model.parameters() are only for encoder
         for key in list(self.preencoders.keys()):
-            self.add_module(key,preencoders[key])
+            self.add_module(f'pre_{key}',preencoders[key])
         self.add_module('encoder',encoder)
         for key in list(self.decoders.keys()):
-            self.add_module(key,decoders[key])
+            self.add_module(f'dec_{key}',decoders[key])
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.to(self.device)
