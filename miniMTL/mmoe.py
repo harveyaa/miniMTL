@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from miniMTL.models import *
 
 class MMOEModel(nn.Module):
     """ Naive implementation of Multigate Mixture of Experts."""
@@ -23,7 +24,7 @@ class MMOEModel(nn.Module):
         for i in range(n_experts):
             self.add_module(f'exp{i}',self.experts[i])
         for key in list(self.gates.keys()):
-            self.add_module(key,self.gates[key])
+            self.add_module(f'gate_{key}',self.gates[key])
         for key in list(self.decoders.keys()):
             self.add_module(key,self.decoders[key])
 
