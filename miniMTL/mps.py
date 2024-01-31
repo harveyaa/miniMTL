@@ -1,5 +1,9 @@
 import torch
 import torch.nn as nn
+from torcheval.metrics.functional import binary_f1_score
+from torcheval.metrics.functional import binary_auroc
+from torcheval.metrics.functional import binary_precision
+from torcheval.metrics.functional.classification import binary_recall
 
 class MPSModel(nn.Module):
     """ Middle Parameter Sharing."""
@@ -100,18 +104,36 @@ class MPSModel(nn.Module):
             loss_fn = self.loss_fns[task]
             size = len(dataloader.dataset)
 
-            loss, correct = 0, 0
+            loss, correct, auc, f1, precision, recall = 0, 0, 0, 0, 0, 0
             with torch.no_grad():
-                i=0
                 for X, Y_dict in dataloader:
                     X = X.to(self.device)                    
                     Y = Y_dict[task].to(self.device)
                     pred = self.forward(X,[task])[task]
 
-                    loss += loss_fn(pred, Y).item()
-                    correct += (pred.argmax(1) == Y).type(torch.float).sum().item()
-                    i +=1
+                    # Do this to average properly over the whole list of batches
+                    loss += loss_fn(pred, Y).item()*X.size(dim=0)
+
+                    probs = nn.functional.softmax(pred,dim=1)[:,1]
+                    auc += binary_auroc(probs,Y).item()
+
+                    pred_labels = pred.argmax(1)
+                    correct += (pred_labels == Y).type(torch.float).sum().item()
+
+                    f1 += binary_f1_score(probs,Y).item()
+                    precision += binary_precision(probs,Y).item()
+                    recall += binary_recall(probs,Y).item()
             loss /= size
             correct /= size
-            metrics[task] = {'accuracy':100*correct,'loss':loss}
+            auc /= len(dataloader)
+            f1 /= len(dataloader)
+            precision /= len(dataloader)
+            recall /= len(dataloader)
+
+            metrics[task] = {'accuracy':100*correct,
+                             'loss':loss,
+                             'auc':auc,
+                             'f1':f1,
+                             'precision':precision,
+                             'recall':recall}
         return metrics
