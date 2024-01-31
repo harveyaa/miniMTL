@@ -125,9 +125,18 @@ class Trainer:
                 for task in tasks:
                     self.writer.add_scalar(f"Loss/test/{task}",metrics[task]['loss'],epoch_num)
                     self.writer.add_scalar(f"Accuracy/test/{task}",metrics[task]['accuracy'],epoch_num)
+                    self.writer.add_scalar(f"AUC/test/{task}",metrics[task]['auc'],epoch_num)
+                    self.writer.add_scalar(f"F1/test/{task}",metrics[task]['f1'],epoch_num)
+                    self.writer.add_scalar(f"Precision/test/{task}",metrics[task]['precision'],epoch_num)
+                    self.writer.add_scalar(f"Recall/test/{task}",metrics[task]['recall'],epoch_num)
                     
                     self.logger.add_scalar(task, "Loss/test",metrics[task]['loss'],epoch_num)
                     self.logger.add_scalar(task, "Accuracy/test",metrics[task]['accuracy'],epoch_num)
+                    self.logger.add_scalar(task, "AUC/test",metrics[task]['auc'],epoch_num)
+                    self.logger.add_scalar(task, "F1/test",metrics[task]['f1'],epoch_num)
+                    self.logger.add_scalar(task, "Precision/test",metrics[task]['precision'],epoch_num)
+                    self.logger.add_scalar(task, "Recall/test",metrics[task]['recall'],epoch_num)
+                    
 
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
