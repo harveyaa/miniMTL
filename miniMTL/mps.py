@@ -114,15 +114,16 @@ class MPSModel(nn.Module):
                     # Do this to average properly over the whole list of batches
                     loss += loss_fn(pred, Y).item()*X.size(dim=0)
 
-                    probs = nn.functional.softmax(pred,dim=1)[:,1]
-                    auc += binary_auroc(probs,Y).item()
+                    if pred.size(dim=1)==2:
+                        probs = nn.functional.softmax(pred,dim=1)[:,1]
+                        auc += binary_auroc(probs,Y).item()
 
-                    pred_labels = pred.argmax(1)
-                    correct += (pred_labels == Y).type(torch.float).sum().item()
+                        pred_labels = pred.argmax(1)
+                        correct += (pred_labels == Y).type(torch.float).sum().item()
 
-                    f1 += binary_f1_score(probs,Y).item()
-                    precision += binary_precision(probs,Y).item()
-                    recall += binary_recall(probs,Y).item()
+                        f1 += binary_f1_score(probs,Y).item()
+                        precision += binary_precision(probs,Y).item()
+                        recall += binary_recall(probs,Y).item()
             loss /= size
             correct /= size
             auc /= len(dataloader)
