@@ -435,6 +435,23 @@ class head8(nn.Module):
         x = self.batch4(x)
         x = self.dropout(self.leaky(self.fc5(x)))
         return x
+
+class head88(nn.Module):
+    """ Mod for regression output (MLPconn_deeper_reg)"""
+    def __init__(self):
+        super().__init__()
+        self.fc4 = nn.Linear(64,64)
+        self.batch4 = nn.BatchNorm1d(64)
+        self.fc5 = nn.Linear(64,1)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc4(x)))
+        x = self.batch4(x)
+        x = self.dropout(self.leaky(self.fc5(x)))
+        return x
     
 # MODIFIED BASIC MODEL FOR MPS
 # Split encoder3 into preencoder & encoder
@@ -548,6 +565,19 @@ class head9(nn.Module):
         x = self.dropout(self.leaky(self.fc3(x)))
         return x
 
+class head99(nn.Module):
+    """ Mod head for single val output (MLPconn_wider_reg)"""
+    def __init__(self):
+        super().__init__()
+        self.fc3 = nn.Linear(128,1)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc3(x)))
+        return x
+
 class encoder10(nn.Module):
     """ Simple MLP for connectome 2080 vec. (MLPconn_thinner)"""
     def __init__(self):
@@ -580,6 +610,19 @@ class head10(nn.Module):
     def forward(self,x):
         x = self.dropout(self.leaky(self.fc3(x)))
         return x
+
+class head1010(nn.Module):
+    """ Mod for reg output (MLPconn_thinner_reg)"""
+    def __init__(self):
+        super().__init__()
+        self.fc3 = nn.Linear(32,1)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc3(x)))
+        return x
     
 class encoder11(nn.Module):
     """ Simple MLP for connectome 2080 vec. (MLPconn_shorter)"""
@@ -602,6 +645,19 @@ class head11(nn.Module):
     def __init__(self):
         super().__init__()
         self.fc2 = nn.Linear(128,2)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc2(x)))
+        return x
+
+class head1111(nn.Module):
+    """ Mod for reg output (MLPconn_shorter_reg)"""
+    def __init__(self):
+        super().__init__()
+        self.fc2 = nn.Linear(128,1)
 
         self.dropout = nn.Dropout()
         self.leaky = nn.LeakyReLU()
