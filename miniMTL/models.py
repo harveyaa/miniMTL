@@ -217,7 +217,7 @@ class head2(torch.nn.Module):
 
 
 class encoder3(nn.Module):
-    """ Simple MLP for connectome 2080 vec."""
+    """ Simple MLP for connectome 2080 vec. (MLPconn)"""
     def __init__(self):
         super().__init__()
         # in_channels, out_channels
@@ -237,6 +237,7 @@ class encoder3(nn.Module):
         return x
 
 class head3(nn.Module):
+    """ Simple MLP for connectome 2080 vec. (MLPconn)"""
     def __init__(self):
         super().__init__()
         self.fc3 = nn.Linear(64,2)
@@ -249,7 +250,7 @@ class head3(nn.Module):
         return x
 
 class head33(nn.Module):
-    """ Identical to head 3 but with 1 output for regression. """
+    """ Identical to head 3 but with 1 output for regression. (MLPconn_reg)"""
     def __init__(self):
         super().__init__()
         self.fc3 = nn.Linear(64,1)
@@ -283,6 +284,7 @@ class encoder4(nn.Module):
 
 
 class head4(nn.Module):
+    """ Simple MLP for confounds 58 vec."""
     def __init__(self):
         super().__init__()
         self.fc3 = nn.Linear(8,2)
@@ -295,7 +297,7 @@ class head4(nn.Module):
         return x
 
 class encoder5(nn.Module):
-    """ Simple MLP for concat connectome 2080 + confound 58 vec."""
+    """ Simple MLP for concat connectome 2080 + confound 58 vec. (MLPconcat)"""
     def __init__(self):
         super().__init__()
         # in_channels, out_channels
@@ -316,6 +318,7 @@ class encoder5(nn.Module):
 
 
 class head5(nn.Module):
+    """ Simple MLP for concat connectome 2080 + confound 58 vec.(MLPconcat)"""
     def __init__(self):
         super().__init__()
         self.fc3 = nn.Linear(64,2)
@@ -345,6 +348,7 @@ class encoder6(nn.Module):
 
 
 class head6(nn.Module):
+    """ Simple MLP for confounds 5 vec."""
     def __init__(self):
         super().__init__()
         self.fc3 = nn.Linear(4,2)
@@ -378,6 +382,7 @@ class encoder7(nn.Module):
 
 
 class head7(nn.Module):
+    """ Simple MLP for concat connectome 2080 + confound 5 vec."""
     def __init__(self):
         super().__init__()
         self.fc3 = nn.Linear(16,2)
@@ -390,7 +395,7 @@ class head7(nn.Module):
         return x
 
 class encoder8(nn.Module):
-    """ Deeper MLP for connectome 2080 vec."""
+    """ Deeper MLP for connectome 2080 vec. (MLPconn_deeper)"""
     def __init__(self):
         super().__init__()
         # in_channels, out_channels
@@ -415,6 +420,7 @@ class encoder8(nn.Module):
 
 
 class head8(nn.Module):
+    """ Deeper MLP for connectome 2080 vec. (MLPconn_deeper)"""
     def __init__(self):
         super().__init__()
         self.fc4 = nn.Linear(64,64)
@@ -453,7 +459,6 @@ class preencoder33(nn.Module):
         return x
     
 class encoder33(nn.Module):
-    """ Simple MLP for connectome 2080 vec."""
     def __init__(self):
         super().__init__()
         # in_channels, out_channels
@@ -474,7 +479,7 @@ class encoder33(nn.Module):
     
 # add a pre layer keeping two layers in encoder
 class preencoder333(nn.Module):
-    """ Simple MLP for connectome 2080 vec."""
+    """ Simple MLP for connectome 2080 vec. (MPS)"""
     def __init__(self):
         super().__init__()
         # in_channels, out_channels
@@ -490,7 +495,7 @@ class preencoder333(nn.Module):
         return x
     
 class encoder333(nn.Module):
-    """ Simple MLP for connectome 2080 vec."""
+    """ (MPS)"""
     def __init__(self):
         super().__init__()
         # in_channels, out_channels
@@ -507,4 +512,100 @@ class encoder333(nn.Module):
         x = self.batch1(x)
         x = self.dropout(self.leaky(self.fc2(x)))
         x = self.batch2(x)
+        return x
+    
+# MODEL PARAMETER VARIATIONS FOR REVIEWS
+class encoder9(nn.Module):
+    """ Simple MLP for connectome 2080 vec. (MLPconn_wider)"""
+    def __init__(self):
+        super().__init__()
+        # in_channels, out_channels
+        self.fc1 = nn.Linear(2080,512)
+        self.batch1 = nn.BatchNorm1d(512)
+        self.fc2 = nn.Linear(512, 128)
+        self.batch2 = nn.BatchNorm1d(128)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc1(x)))
+        x = self.batch1(x)
+        x = self.dropout(self.leaky(self.fc2(x)))
+        x = self.batch2(x)
+        return x
+
+class head9(nn.Module):
+    """ Simple MLP for connectome 2080 vec. (MLPconn_wider)"""
+    def __init__(self):
+        super().__init__()
+        self.fc3 = nn.Linear(128,2)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc3(x)))
+        return x
+
+class encoder10(nn.Module):
+    """ Simple MLP for connectome 2080 vec. (MLPconn_thinner)"""
+    def __init__(self):
+        super().__init__()
+        # in_channels, out_channels
+        self.fc1 = nn.Linear(2080,128)
+        self.batch1 = nn.BatchNorm1d(128)
+        self.fc2 = nn.Linear(128, 32)
+        self.batch2 = nn.BatchNorm1d(32)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc1(x)))
+        x = self.batch1(x)
+        x = self.dropout(self.leaky(self.fc2(x)))
+        x = self.batch2(x)
+        return x
+
+class head10(nn.Module):
+    """ Simple MLP for connectome 2080 vec. (MLPconn_thinner)"""
+    def __init__(self):
+        super().__init__()
+        self.fc3 = nn.Linear(32,2)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc3(x)))
+        return x
+    
+class encoder11(nn.Module):
+    """ Simple MLP for connectome 2080 vec. (MLPconn_shorter)"""
+    def __init__(self):
+        super().__init__()
+        # in_channels, out_channels
+        self.fc1 = nn.Linear(2080,128)
+        self.batch1 = nn.BatchNorm1d(128)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc1(x)))
+        x = self.batch1(x)
+        return x
+
+class head11(nn.Module):
+    """ Simple MLP for connectome 2080 vec. (MLPconn_shorter)"""
+    def __init__(self):
+        super().__init__()
+        self.fc2 = nn.Linear(128,2)
+
+        self.dropout = nn.Dropout()
+        self.leaky = nn.LeakyReLU()
+    
+    def forward(self,x):
+        x = self.dropout(self.leaky(self.fc2(x)))
         return x
