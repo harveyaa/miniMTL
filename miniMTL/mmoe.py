@@ -127,7 +127,7 @@ class MMOEModel(nn.Module):
                     pred = self.forward(X,[task])[task]
 
                     # Do this to average properly over the whole list of batches
-                    loss += loss_fn(pred, Y).item()*X.size(dim=0)
+                    loss += loss_fn(pred, Y).item()
 
                     if pred.size(dim=1)==2:
                         probs = nn.functional.softmax(pred,dim=1)[:,1]
