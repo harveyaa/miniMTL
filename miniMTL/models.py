@@ -50,7 +50,28 @@ class encoder0(nn.Module):
         x = self.dropout(F.relu(self.fc1(x)))
         x = self.batch1(x)
         return x
+    
+class encoder100(nn.Module):
+    "CNN var for reviews - full 64 x 64 connectome"
+    def __init__(self):
+        super().__init__()
+        # in_channels, out_channels
+        self.conv = nn.Conv2d(1, 256, (8,8))
+        self.batch0 = nn.BatchNorm2d(256)
+        self.fc1 = nn.Linear(831744, 64).double()
+        self.batch1 = nn.BatchNorm1d(64)
+        self.fc2 = nn.Linear(64, 64)
+        self.batch2 = nn.BatchNorm1d(64)
 
+        self.dropout = nn.Dropout()
+    
+    def forward(self,x):
+        x = self.conv(x)
+        x = self.batch0(x)
+        x = x.view(x.size()[0],-1)
+        x = self.dropout(F.relu(self.fc1(x)))
+        x = self.batch1(x)
+        return x
 
 class head0(nn.Module):
     def __init__(self):
