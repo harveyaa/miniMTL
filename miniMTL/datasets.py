@@ -88,7 +88,7 @@ def get_connectome(sub_id,conn_path,format):
     Raises
     ------
     ValueError
-        Connectome format (int encoded) must be in [0,1,2].
+        Connectome format (int encoded) must be in [0,1,2,3].
 
     Returns
     -------
@@ -105,8 +105,17 @@ def get_connectome(sub_id,conn_path,format):
         return conn[mask][np.random.permutation(2080)].reshape(40,52)
     elif format == 2:
         return torch.unsqueeze(torch.from_numpy(conn),0)
+    elif format == 3:
+        "reordered according to mean conn clustering - cluster_conn.ipynb"
+        labels_order = np.array([ 7, 16,  0,  6,  3, 20, 24, 10, 43, 19, 30, 18, 23, 40,  8, 21,  9,
+       54, 38, 49, 52, 33, 41, 51, 60, 29, 32, 26, 37, 15, 34, 42, 58,  1,
+       13, 22, 17, 50, 55, 61, 44, 46, 25, 31, 45, 59, 35, 63, 12, 48, 53,
+       62,  2,  4,  5, 14, 47, 11, 28, 39, 56, 27, 36, 57])
+        conn_ = pd.DataFrame(conn)
+        conn_ = conn_[labels_order].loc[labels_order].to_numpy()
+        return torch.unsqueeze(torch.from_numpy(conn_),0)
     else:
-        raise ValueError('Connectome format (int encoded) must be in [0,1,2].')
+        raise ValueError('Connectome format (int encoded) must be in [0,1,2,3].')
 
 def get_concat(conf,sub_id,conn_path,format):
     """ Load & format concatenated confounds and connectome for given sub_id. 
@@ -177,6 +186,7 @@ class caseControlDataset(Dataset):
             - 0: vector (58, 2080, 2080 + 58)
             - 1: random shuffle of vector into array (N/A, 40x52, 42x51)
             - 2: full connectome (N/A, N/A, 64x64)
+            - 3: full connectome (N/A, N/A, 64x64), reordered by clustering
     """
     def __init__(self,case,pheno_path,id_path=None,conn_path=None,type='concat',strategy='balanced',format=0):
         assert type in ['concat','conn','conf','conf_no_site','concat_no_site']
